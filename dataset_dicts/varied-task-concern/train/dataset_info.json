@@ -1,0 +1,24 @@
+{
+  "citation": "",
+  "description": "",
+  "features": {
+    "previous_chat": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "last_message": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "concerning_definitions": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "is_concerning_score": {
+      "dtype": "float32",
+      "_type": "Value"
+    }
+  },
+  "homepage": "",
+  "license": ""
+}

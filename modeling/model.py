@@ -1,5 +1,6 @@
 import torch
 from torch.utils.data import Dataset
+from transformers import AutoModel, PreTrainedModel
 
 class ConcernDataset(Dataset):
     def __init__(self, data, tokenizer):
@@ -8,9 +9,9 @@ class ConcernDataset(Dataset):
 
     def __len__(self):
         return len(self.data)
-
+    
     def __getitem__(self, idx):
-        row = self.data.iloc[idx]
+        row = self.data[idx]
         inputs_1 = self._prepare_inputs(row['previous_chat'])
         inputs_2 = self._prepare_inputs(row['last_message'])
         inputs_3 = self._prepare_inputs(row['concerning_definitions'])
@@ -22,11 +23,10 @@ class ConcernDataset(Dataset):
         tokens = self.tokenizer(text, padding='max_length', truncation=True, return_tensors='pt')
         return tokens
 
-
-class CrossAttentionModel(torch.nn.Module):
-    def __init__(self, embedding_model):
-        super(CrossAttentionModel, self).__init__()
-        self.embedding_model = embedding_model
+class CrossAttentionModel(AutoModel):
+    def __init__(self, config):
+        super(CrossAttentionModel, self).__init__(config)
+        self.embedding_model = AutoModel.from_pretrained(config.pretrained_model_name_or_path)
         self.cross_attention = torch.nn.MultiheadAttention(embed_dim=768, num_heads=12)
         self.classifier = torch.nn.Linear(768, 1)
 
@@ -58,21 +58,14 @@ class CrossAttentionModel(torch.nn.Module):
                                                          value=outputs_3.last_hidden_state.permute(1, 0, 2),
                                                          attn_mask=None)
         
-        #Normalization (play with this)
+        # Normalization
         cross_attention_output = self.layer_norm(cross_attention_output)
 
-        # FFN (play with this)
+        # FFN
         cross_attention_output = self.ffn(cross_attention_output)
 
-        # Mean pooling (play with this, only this or max pooling should be on)
+        # Mean pooling
         pooled_output = torch.mean(cross_attention_output, dim=0)
         logits = self.classifier(pooled_output).squeeze()
-
-        # Max pooling (play with this, only this or mean pooling should be on)
-        #pooled_output, _ = torch.max(cross_attention_output, dim=0)
-        #logits = self.classifier(pooled_output).squeeze()
-        
-        # Use the first token's representation for classification (CLS token)
-        # logits = self.classifier(cross_attention_output[0]).squeeze()
         
         return logits

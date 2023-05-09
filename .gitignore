@@ -1,3 +1,5 @@
 .env
 Pipfile.lock
 **/.ipynb_checkpoints
+labeled_datasets/*
+infrastructure

@@ -14,6 +14,7 @@ jupyter = "*"
 transformers = "*"
 torch = "*"
 s3fs = "*"
+huggingface-hub = "*"
 
 [dev-packages]
 

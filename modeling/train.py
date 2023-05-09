@@ -1,12 +1,13 @@
-import json
 import argparse
 import os
+import time
 
 import torch
-from transformers import RobertaModel, RobertaTokenizer
+from transformers import AutoTokenizer, PretrainedConfig
 from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import StepLR
 import pandas as pd
+from datasets import load_dataset
 
 from model import ConcernDataset, CrossAttentionModel
 
@@ -43,31 +44,33 @@ def evaluate_model(model, data_loader, criterion, device):
     return avg_mae, avg_loss
 
 
-def train(paths, train_sample_size=None, val_sample_size=None, test_sample_size=None):
+def train(num_epochs, batch_size, learning_rate, step_size, gamma, embedder_name, dataset_path, model_save_path, accumulation_steps, train_sample_size=None, val_sample_size=None, test_sample_size=None):
 
-    batch_size = 16
+    dataset = load_dataset(dataset_path)
+
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
-    embedding_model = RobertaModel.from_pretrained('roberta-base')  
-    cross_attention_model = CrossAttentionModel(embedding_model)
+    tokenizer = AutoTokenizer.from_pretrained(embedder_name)
 
-    train_data, val_data, test_data = process_datasets(paths, train_sample_size, val_sample_size, test_sample_size)
+    config = PretrainedConfig()
+    config.pretrained_model_name_or_path = embedder_name
+    cross_attention_model = CrossAttentionModel(config)
 
-    train_loader = create_data_loader(train_data, tokenizer, batch_size)
-    val_loader = create_data_loader(val_data, tokenizer, batch_size)
-    test_loader = create_data_loader(test_data, tokenizer, batch_size)
+    train_loader = create_data_loader(dataset['train'], tokenizer, batch_size)
+    val_loader = create_data_loader(dataset['validation'], tokenizer, batch_size)
+    test_loader = create_data_loader(dataset['test'], tokenizer, batch_size)
 
     criterion = torch.nn.MSELoss()
-    optimizer = torch.optim.Adam(cross_attention_model.parameters(), lr=1e-5)
-    scheduler = StepLR(optimizer, step_size=30, gamma=0.1)
-
-    accumulation_steps = 4  # Adjust this value according to your needs
+    optimizer = torch.optim.Adam(cross_attention_model.parameters(), lr=learning_rate)
+    scheduler = StepLR(optimizer, step_size=step_size, gamma=gamma)
 
     cross_attention_model.train()
     cross_attention_model.to(device)
 
-    num_epochs = 5
+    if not os.path.exists('checkpoints'):
+        os.makedirs('checkpoints')
+
+    best_model = None
     best_val_mae = None
     for epoch in range(num_epochs):
         epoch_loss = 0
@@ -100,38 +103,56 @@ def train(paths, train_sample_size=None, val_sample_size=None, test_sample_size=
         print(f"Validation MSE: {val_mae:.4f}, Validation Loss: {val_loss:.4f}")
 
         # Save the best model based on validation mse
-        if not best_val_mae:
+        if val_mae < best_val_mae:
             best_val_mae = val_mae
-            torch.save(cross_attention_model.state_dict(), 'best_model.pth')
-        elif val_mae < best_val_mae:
-            best_val_mae = val_mae
-            torch.save(cross_attention_model.state_dict(), 'best_model.pth')
+            best_model = cross_attention_model.state_dict()
 
-    torch.cuda.empty_cache()
+            timestamp = int(time.time())
+            checkpoint_path = f'checkpoints/best_model_{timestamp}'
+            cross_attention_model.save_pretrained(checkpoint_path)
+            tokenizer.save_pretrained(checkpoint_path)  # Save the tokenizer
+
+        torch.cuda.empty_cache()
 
     # Load the best model
-    best_model = CrossAttentionModel(model)
-    best_model.load_state_dict(torch.load('best_model.pth'))
+    best_model = CrossAttentionModel.from_pretrained(checkpoint_path)
     best_model.to(device)
+    tokenizer = AutoTokenizer.from_pretrained(checkpoint_path)
 
     # Evaluate on the test set
     test_mse, test_loss = evaluate_model(best_model, test_loader, criterion, device)
     print(f"Test MSE: {test_mse:.4f}, Test Loss: {test_loss:.4f}")
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Description of your program')
-    parser.add_argument('input_files', metavar='input_file', type=str, nargs='+',
-                        help='List of input file paths')
-    parser.add_argument('--train-sample-size', dest='train_sample_size', type=float,
-                    help='Size of the training set', default=None)
-    parser.add_argument('--val-sample-size', dest='val_sample_size', type=float,
-                        help='Size of the validation set', default=None)
-    parser.add_argument('--test-sample-size', dest='test_sample_size', type=float,
-                        help='Size of the test set', default=None)
-    args = parser.parse_args()
-    input_paths = args.input_files
-    train_sample_size = args.train_sample_size
-    val_sample_size = args.val_sample_size
-    test_sample_size = args.test_sample_size
+    cross_attention_model.save_pretrained(model_save_path)
+    tokenizer.save_pretrained(model_save_path)
+                                          
 
-    train(input_paths, train_sample_size, val_sample_size, test_sample_size)
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--epochs', type=int, default=5)
+    parser.add_argument('--batch_size', type=int, default=16)
+    parser.add_argument('--lr', type=float, default=1e-5)
+    parser.add_argument('--step_size', type=int, default=30)
+    parser.add_argument('--gamma', type=float, default=0.1)
+    parser.add_argument('--accumulation_steps', type=int, default=4)
+    parser.add_argument('--embedder_name', type=str, default='roberta-base')
+    parser.add_argument('--dataset_path', type=str)
+    args = parser.parse_args()
+
+    # Where the final model will be saved
+    model_save_path = os.environ['SM_MODEL_DIR']
+
+    # Where the training dataset will be
+    dataset_path = os.environ['SM_CHANNEL_DATASET']
+
+    # Update the training script to use the command-line arguments
+    num_epochs = args.epochs
+    batch_size = args.batch_size
+    learning_rate = args.lr
+    step_size = args.step_size
+    gamma = args.gamma
+    dataset_path = args.dataset_path
+    accumulation_steps = args.accumulation_steps
+    embedder_name = args.embedder_name
+
+    train(num_epochs, batch_size, learning_rate, step_size, gamma, embedder_name, dataset_path, model_save_path, accumulation_steps, train_sample_size=None, val_sample_size=None, test_sample_size=None)

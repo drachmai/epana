@@ -1,9 +1,10 @@
-DEFAULT_S3_BUCKET := my-default-bucket
-DEFAULT_S3_PATH := my-default-path
+include .env
+export $(shell sed 's/=.*//' envfile)
 
 LABELED_DIRECTORIES = labeled_datasets/marketing labeled_datasets/medicine labeled_datasets/safety\ services
 
-.PHONY: run-script
+install:
+	pipenv install
 
 label:
 ifndef LABELER
@@ -14,7 +15,12 @@ else
 endif
 
 create-dataset:
-	$(eval S3_BUCKET := $(or $(S3_BUCKET),$(DEFAULT_S3_BUCKET)))
-	$(eval S3_PATH := $(or $(S3_PATH),$(DEFAULT_S3_PATH)))
-	@echo "Creating dataset in bucket: $(S3_BUCKET), path: $(S3_PATH)"
-	pipenv run python dataset_creation/create_dataset.py $(LABELED_DIRECTORIES) --s3-bucket-dest $(S3_BUCKET) --s3-dataset-name $(DEFAULT_S3_BUCKET)
+	pipenv run python dataset_creation/create_dataset.py $(LABELED_DIRECTORIES) --dataset-name $(DATASET_NAME) --local-dir $(LOCAL_DATASET_PATH) --s3-bucket $(TRAINING_DATA_BUCKET) --huggingface-org-name $(HUGGINGFACE_ORG_NAME)
+
+create-infrastructure:
+	cd infrastructure/aws && \
+	AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY) AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_KEY) TRAINING_DATA_BUCKET_NAME=$(TRAINING_DATA_BUCKET) pulumi up -y
+
+destroy-infrastructure:
+	cd infrastructure/aws && \
+	AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY) AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_KEY) TRAINING_DATA_BUCKET_NAME=$(TRAINING_DATA_BUCKET) pulumi down -y

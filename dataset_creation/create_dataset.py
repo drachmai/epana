@@ -1,24 +1,59 @@
 import json
 import argparse
 import os
+import datetime
+
+now = datetime.datetime.now()
 
 import pandas as pd
-import s3fs
+from datasets import Dataset, DatasetDict, Features, Value
+from datasets.filesystems import S3FileSystem
 
-def create_dataset(input_paths, s3_bucket, s3_dir_path, train_sample_size=None, val_sample_size=None, test_sample_size=None):
-    train_data, val_data, test_data = process_datasets(input_paths, train_sample_size, val_sample_size, test_sample_size)
+def create_dataset(input_paths, dataset_name, local_dir, train_sample_size=None, val_sample_size=None, test_sample_size=None, s3_bucket=None, s3_dir=None, huggingface_org_name=None):
+    columns_to_keep = ['previous_chat', 'last_message', 'concerning_definitions', 'is_concerning_score']
 
-    aws_access_key_id = os.environ.get("AWS_ACCESS_KEY")
-    aws_secret_access_key = os.environ.get("AWS_SECRET_KEY")
-    s3 = s3fs.S3FileSystem(key=aws_access_key_id, secret=aws_secret_access_key)
+    train_df, val_df, test_df = process_datasets(input_paths, train_sample_size, val_sample_size, test_sample_size)
 
-    with s3.open(f"{s3_bucket}/{s3_dir_path}/train.jsonl", 'w') as f:
-        train_data.to_json(f, orient='records', lines=True)
-    with s3.open(f"{s3_bucket}/{s3_dir_path}/val.jsonl", 'w') as f:
-        val_data.to_json(f, orient='records', lines=True)
-    with s3.open(f"{s3_bucket}/{s3_dir_path}/train.jsonl", 'w') as f:
-        test_data.to_json(f, orient='records', lines=True)
+    train_df = train_df[columns_to_keep].reset_index(drop=True)
+    val_df = val_df[columns_to_keep].reset_index(drop=True)
+    test_df = test_df[columns_to_keep].reset_index(drop=True)
 
+    features = Features({
+        'previous_chat': Value('string'),
+        'last_message': Value('string'),
+        'concerning_definitions': Value('string'),
+        'is_concerning_score': Value('float32')
+    })
+
+    train_dataset = Dataset.from_pandas(train_df, features=features)
+    val_dataset = Dataset.from_pandas(val_df, features=features)
+    test_dataset = Dataset.from_pandas(test_df, features=features)
+
+    dataset_dict = DatasetDict({
+        'train': train_dataset,
+        'validation': val_dataset,
+        'test': test_dataset
+    })
+
+    local_path = f"{local_dir}/{dataset_name}"
+
+    dataset_dict.save_to_disk(local_path)
+
+    if s3_bucket:
+
+        if not s3_dir:
+            s3_dir = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        
+        aws_access_key_id = os.environ.get("AWS_ACCESS_KEY")
+        aws_secret_access_key = os.environ.get("AWS_SECRET_KEY")
+
+        s3 = S3FileSystem(key=aws_access_key_id, secret=aws_secret_access_key)
+        dataset_dict.save_to_disk(f"s3://{s3_bucket}/{s3_dir}/{dataset_name}", storage_options=s3.storage_options)
+
+    if huggingface_org_name:
+        dataset_dict.push_to_hub(f"{huggingface_org_name}/{dataset_name}", token="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")
+
+    return dataset_dict
 
 def process_dataset(data, metadata):
     data['concerning_label'] = data['label'].str.split("\n").apply(lambda x: get_label_value(x, "Label -"))
@@ -96,22 +131,32 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Description of your program')
     parser.add_argument('input_files', metavar='input_file', type=str, nargs='+',
                         help='List of input file paths')
-    parser.add_argument('--s3-bucket-dest', dest='s3_bucket_dest', type=str,
-                    help='Destination of final datasets')
-    parser.add_argument('--s3-dataset-name', dest='s3_dataset_name', type=str,
-                    help='Name for the s3 dataset')
+    parser.add_argument('--dataset-name', dest='dataset_name', type=str,
+                    help='Name for the dataset')
+    parser.add_argument('--local-dir', dest='local_dir', type=str,
+                    help='Destination of dataset locally')
     parser.add_argument('--train-sample-size', dest='train_sample_size', type=float,
                     help='Size of the training set', default=None)
     parser.add_argument('--val-sample-size', dest='val_sample_size', type=float,
                         help='Size of the validation set', default=None)
     parser.add_argument('--test-sample-size', dest='test_sample_size', type=float,
                         help='Size of the test set', default=None)
+    parser.add_argument('--s3-dir', dest='s3_dir', type=str,
+                    help='Optional directory to put dataset in', default=None)
+    parser.add_argument('--s3-bucket', dest='s3_bucket', type=str,
+                    help='Bucket to putdataset in', default=None)
+    parser.add_argument('--huggingface-org-name', dest='huggingface_org_name', type=str,
+                    help='Huggingface org to push to', default=None)
+    
     args = parser.parse_args()
     input_paths = args.input_files
     train_sample_size = args.train_sample_size
     val_sample_size = args.val_sample_size
     test_sample_size = args.test_sample_size
-    s3_bucket_dest = args.s3_bucket_dest
-    s3_dataset_name = args.s3_dataset_name
+    s3_bucket = args.s3_bucket
+    s3_dir = args.s3_dir
+    dataset_name = args.dataset_name
+    local_dir = args.local_dir
+    huggingface_org_name = args.huggingface_org_name
 
-    create_dataset(input_paths, s3_bucket_dest, s3_dataset_name, train_sample_size, val_sample_size, test_sample_size)
+    create_dataset(input_paths, dataset_name, local_dir, train_sample_size, val_sample_size, test_sample_size, s3_bucket, s3_dir, huggingface_org_name)
