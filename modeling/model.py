@@ -1,6 +1,14 @@
 import torch
 from torch.utils.data import Dataset
-from transformers import AutoModel, PreTrainedModel
+from transformers import AutoModel, PretrainedConfig, PreTrainedModel
+
+
+class CrossAttentionConfig(PretrainedConfig):
+    model_type = "cross_attention"
+    def __init__(self, pretrained_model_name_or_path, **kwargs):
+        super(CrossAttentionConfig, self).__init__(**kwargs)
+        self.pretrained_model_name_or_path = pretrained_model_name_or_path
+
 
 class ConcernDataset(Dataset):
     def __init__(self, data, tokenizer):
@@ -23,7 +31,10 @@ class ConcernDataset(Dataset):
         tokens = self.tokenizer(text, padding='max_length', truncation=True, return_tensors='pt')
         return tokens
 
-class CrossAttentionModel(AutoModel):
+
+class CrossAttentionModel(PreTrainedModel):
+    config_class = CrossAttentionConfig
+    
     def __init__(self, config):
         super(CrossAttentionModel, self).__init__(config)
         self.embedding_model = AutoModel.from_pretrained(config.pretrained_model_name_or_path)

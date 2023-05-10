@@ -24,3 +24,6 @@ create-infrastructure:
 destroy-infrastructure:
 	cd infrastructure/aws && \
 	AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY) AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_KEY) TRAINING_DATA_BUCKET_NAME=$(TRAINING_DATA_BUCKET) pulumi down -y
+
+train-local:
+	PYTHONPATH=modeling pipenv run python modeling/trainers/local.py --dataset_path dataset_dicts/varied-task-concern --model_save_path .
