@@ -15,6 +15,7 @@ transformers = "*"
 torch = "*"
 s3fs = "*"
 huggingface-hub = "*"
+sagemaker = "*"
 
 [dev-packages]
 

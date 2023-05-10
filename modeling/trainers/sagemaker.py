@@ -2,6 +2,7 @@ import os
 import argparse
 
 from datasets import load_dataset
+import wandb
 
 from modeling.train import train
 
@@ -32,6 +33,9 @@ if __name__ == '__main__':
     dataset_path = args.dataset_path
     accumulation_steps = args.accumulation_steps
     embedder_name = args.embedder_name
+
+    # Wandb auth
+    wandb.sagemaker_auth(path="source_dir")
 
     model, tokenizer = train(num_epochs, batch_size, learning_rate, step_size, gamma, embedder_name, dataset, accumulation_steps, train_sample_size=None, val_sample_size=None, test_sample_size=None)
 

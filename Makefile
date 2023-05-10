@@ -8,7 +8,7 @@ install:
 
 label:
 ifndef LABELER
-	@echo "Please provide a script to run with: make run-script SCRIPT=your_script.py"
+	@echo "Please provide a labeler to use: make label LABELER=marketing"
 else
 	@echo "Running $(LABELER) labeler"
 	pipenv run python label_$(LABELER).py
@@ -27,3 +27,9 @@ destroy-infrastructure:
 
 train-local:
 	PYTHONPATH=modeling pipenv run python modeling/trainers/local.py --dataset_path dataset_dicts/varied-task-concern --model_save_path .
+
+train-sagemaker:
+ifndef DATASET_S3_URI
+	@echo "Please specify an S3 URI for the DatasetDict to use for training: make train-sagemaker DATASET_S3_URI=s3://dataset/path"
+	pipenv lock -r > modeling/requirements.txt
+	AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY) AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_KEY) DATASET_S3_URI=$(DATASET_S3_URI) WANDB_API_KEY=$(WANDB_API_KEY) pipenv run scripts/sagemaker_training_job.py

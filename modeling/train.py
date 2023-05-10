@@ -7,7 +7,7 @@ import torch
 from transformers import AutoTokenizer, PretrainedConfig
 from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import StepLR
-import pandas as pd
+import wandb
 
 from model import ConcernDataset, CrossAttentionModel, CrossAttentionConfig
 
@@ -52,7 +52,19 @@ def evaluate_model(model, data_loader, criterion, device):
     return avg_mae, avg_loss
 
 
-def train(num_epochs, batch_size, learning_rate, step_size, gamma, embedder_name, dataset, accumulation_steps, train_sample_size=10, val_sample_size=None, test_sample_size=None):
+def train(num_epochs, batch_size, learning_rate, step_size, gamma, embedder_name, dataset, accumulation_steps, train_sample_size=None, val_sample_size=None, test_sample_size=None):
+    # Set up wandb
+    wandb.init(
+        project="epana",
+        config={
+            "epochs": num_epochs,
+            "batch_size": batch_size,
+            "learning_rate": learning_rate,
+            "step_size": step_size,
+            "gamma": gamma,
+            "embedder_name": embedder_name,
+        }
+    )
 
     # Run on gpu is available
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -99,23 +111,26 @@ def train(num_epochs, batch_size, learning_rate, step_size, gamma, embedder_name
                                         input_ids_2=inputs_2['input_ids'], attention_mask_2=inputs_2['attention_mask'],
                                         input_ids_3=inputs_3['input_ids'], attention_mask_3=inputs_3['attention_mask'])
             loss = criterion(logits, label)
+            wandb.log({"train_loss": loss})
             loss.backward()
+            epoch_loss += loss.item()
 
             # Gradient accumulation
             if (i + 1) % accumulation_steps == 0:
                 optimizer.step()
                 optimizer.zero_grad()
-
-            epoch_loss += loss.item()
+        
+        wandb.log({f"epoch_{epoch}_train_loss": epoch_loss})
 
         # Update the learning rate
         scheduler.step()
 
-        print(f"Epoch {epoch+1}/{num_epochs}, Loss: {epoch_loss/len(train_loader)}")
-
         # Evaluate on validation set
         val_mae, val_loss = evaluate_model(cross_attention_model, val_loader, criterion, device)
-        print(f"Validation MSE: {val_mae:.4f}, Validation Loss: {val_loss:.4f}")
+
+        # Log val mae / loss
+        wandb.log({"val_mae": val_mae})
+        wandb.log({"val_loss": val_loss})
 
         # Save the best model based on validation mse
         if val_mae < best_val_mae:
@@ -136,8 +151,14 @@ def train(num_epochs, batch_size, learning_rate, step_size, gamma, embedder_name
     tokenizer = AutoTokenizer.from_pretrained(checkpoint_path)
 
     # Evaluate on the test set
-    test_mse, test_loss = evaluate_model(best_model, test_loader, criterion, device)
-    print(f"Test MSE: {test_mse:.4f}, Test Loss: {test_loss:.4f}")
+    test_mae, test_loss = evaluate_model(best_model, test_loader, criterion, device)
+
+    # Log test mae / loss
+    wandb.log({"test_mae": test_mae})
+    wandb.log({"test_loss": test_loss})
+
+    # Save model to wandb
+    cross_attention_model.save_pretrained(wandb.run.dir)
 
     # Returning model and tokenizer to make training loop more generic
     return cross_attention_model, tokenizer

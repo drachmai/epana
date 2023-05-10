@@ -44,8 +44,8 @@ def create_dataset(input_paths, dataset_name, local_dir, train_sample_size=None,
         if not s3_dir:
             s3_dir = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         
-        aws_access_key_id = os.environ.get("AWS_ACCESS_KEY")
-        aws_secret_access_key = os.environ.get("AWS_SECRET_KEY")
+        aws_access_key_id = os.environ.get("AWS_ACCESS_KEY_ID")
+        aws_secret_access_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
 
         s3 = S3FileSystem(key=aws_access_key_id, secret=aws_secret_access_key)
         dataset_dict.save_to_disk(f"s3://{s3_bucket}/{s3_dir}/{dataset_name}", storage_options=s3.storage_options)
