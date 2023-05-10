@@ -3,3 +3,5 @@ Pipfile.lock
 **/.ipynb_checkpoints
 labeled_datasets/*
 infrastructure
+modeling/requirements.txt
+checkpoints
