@@ -1,6 +1,7 @@
 import torch
 from torch.utils.data import Dataset
 from transformers import AutoModel, PretrainedConfig, PreTrainedModel
+import numpy as np
 
 
 class CrossAttentionConfig(PretrainedConfig):
@@ -10,22 +11,11 @@ class CrossAttentionConfig(PretrainedConfig):
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
 
 
-class ConcernDatasetBatchSampler:
-    def __init__(self, batches):
-        self.batches = batches
-
-    def __iter__(self):
-        for batch in self.batches:
-            yield batch
-
-    def __len__(self):
-        return len(self.batches)
-
-
 class ConcernDataset(Dataset):
     def __init__(self, data, tokenizer):
         self.tokenizer = tokenizer
-        self.data, self.sorted_lengths = self._sort_by_length(data)
+        self.data = data
+        self.lengths = self._get_lengths()
 
     def __len__(self):
         return len(self.data)
@@ -39,19 +29,14 @@ class ConcernDataset(Dataset):
 
         return {"previous_chat": inputs_1, "last_message": inputs_2, "concerning_definitions": inputs_3, "label": label}
     
-    def _sort_by_length(self, data):
+    def _get_lengths(self):
         # Calculate the length of each text input
-        input_lengths = [max(len(self.tokenizer.encode(row['previous_chat'], truncation=True)),
+        input_lengths = np.array([max(len(self.tokenizer.encode(row['previous_chat'], truncation=True)),
                              len(self.tokenizer.encode(row['last_message'], truncation=True)),
                              len(self.tokenizer.encode(row['concerning_definitions'], truncation=True)))
-                        for row in data]
+                        for row in self.data])
 
-        # Sort the data and lengths by input length
-        sorted_indices = sorted(range(len(input_lengths)), key=lambda i: input_lengths[i])
-        sorted_data = [data[i] for i in sorted_indices]
-        sorted_lengths = [input_lengths[i] for i in sorted_indices]
-
-        return sorted_data, sorted_lengths
+        return input_lengths
 
 
 class CrossAttentionModel(PreTrainedModel):

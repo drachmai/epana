@@ -8,9 +8,11 @@ from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import StepLR
 import wandb
 from tqdm import tqdm
-from torch.utils.data import BatchSampler
+from torch.utils.data import BatchSampler, RandomSampler
+import numpy as np
 
-from model import ConcernDataset, CrossAttentionModel, CrossAttentionConfig, ConcernDatasetBatchSampler
+
+from model import ConcernDataset, CrossAttentionModel, CrossAttentionConfig
 
 
 def sample_dataset(data, sample_size):
@@ -21,46 +23,13 @@ def sample_dataset(data, sample_size):
     return sampled_data
 
 
-def collate_batch(batch):
-    previous_chat = [item["previous_chat"] for item in batch]
-    last_message = [item["last_message"] for item in batch]
-    concerning_definitions = [item["concerning_definitions"] for item in batch]
-    label = torch.stack([item["label"] for item in batch])
-
-    return {
-        "previous_chat": previous_chat,
-        "last_message": last_message,
-        "concerning_definitions": concerning_definitions,
-        "label": label,
-    }
-
-
-def create_batches_by_length(sorted_lengths, batch_size):
-    batches = []
-    current_batch = []
-    current_max_length = 0
-
-    for i, length in enumerate(sorted_lengths):
-        current_batch.append(i)
-        current_max_length = max(current_max_length, length)
-
-        if len(current_batch) * current_max_length >= batch_size:
-            batches.append(current_batch)
-            current_batch = []
-            current_max_length = 0
-
-    if current_batch:
-        batches.append(current_batch)
-
-    return batches
-
-
 def create_data_loader(data, tokenizer, batch_size):
     dataset = ConcernDataset(data, tokenizer)
-    sorted_lengths = dataset.sorted_lengths
-    batches = create_batches_by_length(sorted_lengths, batch_size)
-    batch_sampler = ConcernDatasetBatchSampler(batches)
-    return DataLoader(dataset, batch_sampler=batch_sampler, collate_fn=collate_batch)
+    input_lengths = dataset.lengths
+    sorted_indices = np.argsort(input_lengths)[::-1]
+    sorted_batches = np.split(sorted_indices, range(batch_size, len(sorted_indices), batch_size))
+    batch_sampler = BatchSampler(RandomSampler(sorted_batches), batch_size, drop_last=False)
+    return DataLoader(dataset, batch_sampler=batch_sampler)
 
 
 def evaluate_model(model, data_loader, criterion, device):
@@ -140,9 +109,9 @@ def train(num_epochs, batch_size, learning_rate, step_size, gamma, embedder_name
         epoch_loss = 0
         for i, batch in enumerate(tqdm(train_loader, desc=f"Epoch {epoch+1}")):
 
-            previous_chat = {key: value.to(device) for key, value in batch["previous_chat"].items()}
-            last_message = {key: value.to(device) for key, value in batch["last_message"].items()}
-            concerning_definitions = {key: value.to(device) for key, value in batch["concerning_definitions"].items()}
+            previous_chat = batch["previous_chat"].to(device)
+            last_message = batch["last_message"].to(device)
+            concerning_definitions = batch["concerning_definitions"].to(device)
             label = batch["label"].to(device)
 
             optimizer.zero_grad()
