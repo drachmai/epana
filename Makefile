@@ -3,8 +3,9 @@ export $(shell sed 's/=.*//' .env)
 
 LABELED_DIRECTORIES = labeled_datasets/marketing labeled_datasets/medicine labeled_datasets/safety\ services
 
-install:
+setup:
 	pipenv install
+	pipenv run create_dotenv
 
 label:
 ifndef LABELER
@@ -19,19 +20,20 @@ create-dataset:
 
 create-infrastructure:
 	cd infrastructure/aws && \
-	AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) TRAINING_DATA_BUCKET_NAME=$(TRAINING_DATA_BUCKET) pulumi up -y
+	AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) TRAINING_DATA_BUCKET_NAME=$(TRAINING_DATA_BUCKET) MODEL_DATA_BUCKET_NAME=$(MODEL_BUCKET) pulumi up -y
 
 destroy-infrastructure:
 	cd infrastructure/aws && \
 	AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) TRAINING_DATA_BUCKET_NAME=$(TRAINING_DATA_BUCKET) pulumi down -y
 
 train-local:
-	PYTHONPATH=modeling pipenv run python modeling/trainers/local.py --dataset_path dataset_dicts/varied-task-concern --model_save_path .
+	PYTHONPATH=epana_modeling pipenv run python epana_modeling/trainers/local.py --dataset_path dataset_dicts/varied-task-concern --model_save_path .
 
 train-sagemaker:
-ifndef DATASET_S3_URI
-	@echo "Please specify an S3 URI for the DatasetDict to use for training: make train-sagemaker DATASET_S3_URI=s3://dataset/path"
-else
-	pipenv run pip freeze > modeling/requirements.txt
+ifndef DOWNLOAD_MODEL_PATH
+	pipenv run pip freeze > epana_modeling/requirements.txt
 	AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) AWS_REGION=$(AWS_REGION) WANDB_API_KEY=$(WANDB_API_KEY) SAGEMAKER_EXECUTION_ROLE_ARN=$(SAGEMAKER_EXECUTION_ROLE_ARN) PYTHONPATH=scripts pipenv run train_sagemaker --s3_dataset_uri $(DATASET_S3_URI)
+else
+	pipenv run pip freeze > epana_modeling/requirements.txt
+	AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) AWS_REGION=$(AWS_REGION) WANDB_API_KEY=$(WANDB_API_KEY) SAGEMAKER_EXECUTION_ROLE_ARN=$(SAGEMAKER_EXECUTION_ROLE_ARN) PYTHONPATH=scripts pipenv run train_sagemaker --s3_dataset_uri $(DATASET_S3_URI) --download_model_path $(DOWNLOAD_MODEL_PATH)
 endif

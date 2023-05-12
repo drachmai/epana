@@ -1,37 +1,66 @@
 import argparse
 import os
+import tarfile
 
 import boto3
-import sagemaker
 from sagemaker.pytorch import PyTorch
 
-def launch(s3_dataset_uri):
+def extract_tar_gz(tar_gz_path, output_path):
+    with tarfile.open(tar_gz_path, 'r:gz') as tar:
+        tar.extractall(path=output_path)
+
+
+def args_to_dict(args, excluded):
+    return {k: v for k, v in vars(args).items() if k not in excluded and v is not None}
+
+
+def launch(s3_dataset_uri, hyperparams, download_model_path):
 
     boto3.setup_default_session(region_name='us-west-2')
 
     # Configure the SageMaker training job
     estimator = PyTorch(
         entry_point="trainers/sagemaker.py",
-        source_dir="modeling",
+        source_dir="epana_modeling",
+        output_path=f"s3://{os.environ.get('MODEL_BUCKET')}",
         role=os.environ.get("SAGEMAKER_EXECUTION_ROLE_ARN"),
-        instance_type="ml.g4dn.2xlarge",
+        instance_type="ml.p3.2xlarge",
         instance_count=1,
         framework_version="2.0",
         py_version="py310",
-        hyperparameters={},
+        hyperparameters=hyperparams,
         environment={
             "WANDB_API_KEY": os.environ.get("WANDB_API_KEY"),
-            "PYTHONPATH": "/opt/ml/code/modeling"
+            "PYTHONPATH": "/opt/ml/code/epana_modeling"
         },
     )
     estimator.fit({"dataset": s3_dataset_uri})
 
+    if download_model_path:
+        os.makedirs(download_model_path, exist_ok=True)
+        job_name = estimator.latest_training_job.name
+        s3 = boto3.client('s3')
+        local_tar_gz_path = os.path.join(download_model_path, f"{job_name}.tar.gz")
+
+        s3.download_file(os.environ.get("MODEL_BUCKET"), f"{job_name}/output/model.tar.gz", local_tar_gz_path)
+        extract_tar_gz(local_tar_gz_path, download_model_path)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--s3_dataset_uri', type=str)
+    parser.add_argument('--epochs', type=int)
+    parser.add_argument('--batch_size', type=int)
+    parser.add_argument('--lr', type=float)
+    parser.add_argument('--step_size', type=int)
+    parser.add_argument('--gamma', type=float)
+    parser.add_argument('--accumulation_steps', type=int)
+    parser.add_argument('--embedder_name', type=str)
+    parser.add_argument('--download_model_path', type=str, default=None)
     args = parser.parse_args()
 
-    # Update the training script to use the command-line arguments
     s3_dataset_uri = args.s3_dataset_uri
+    download_model_path = args.download_model_path
+    hyperparams = args_to_dict(args, ['s3_dataset_uri', 'download_model_path'])
 
-    launch(s3_dataset_uri)
+    launch(s3_dataset_uri, hyperparams, download_model_path)

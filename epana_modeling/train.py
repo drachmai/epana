@@ -1,15 +1,16 @@
-import argparse
 import os
 import time
 import random
 
 import torch
-from transformers import AutoTokenizer, PretrainedConfig
+from transformers import AutoTokenizer
 from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import StepLR
 import wandb
+from tqdm import tqdm
+from torch.utils.data import BatchSampler
 
-from model import ConcernDataset, CrossAttentionModel, CrossAttentionConfig
+from model import ConcernDataset, CrossAttentionModel, CrossAttentionConfig, ConcernDatasetBatchSampler
 
 
 def sample_dataset(data, sample_size):
@@ -20,9 +21,46 @@ def sample_dataset(data, sample_size):
     return sampled_data
 
 
+def collate_batch(batch):
+    previous_chat = [item["previous_chat"] for item in batch]
+    last_message = [item["last_message"] for item in batch]
+    concerning_definitions = [item["concerning_definitions"] for item in batch]
+    label = torch.stack([item["label"] for item in batch])
+
+    return {
+        "previous_chat": previous_chat,
+        "last_message": last_message,
+        "concerning_definitions": concerning_definitions,
+        "label": label,
+    }
+
+
+def create_batches_by_length(sorted_lengths, batch_size):
+    batches = []
+    current_batch = []
+    current_max_length = 0
+
+    for i, length in enumerate(sorted_lengths):
+        current_batch.append(i)
+        current_max_length = max(current_max_length, length)
+
+        if len(current_batch) * current_max_length >= batch_size:
+            batches.append(current_batch)
+            current_batch = []
+            current_max_length = 0
+
+    if current_batch:
+        batches.append(current_batch)
+
+    return batches
+
+
 def create_data_loader(data, tokenizer, batch_size):
     dataset = ConcernDataset(data, tokenizer)
-    return DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    sorted_lengths = dataset.sorted_lengths
+    batches = create_batches_by_length(sorted_lengths, batch_size)
+    batch_sampler = ConcernDatasetBatchSampler(batches)
+    return DataLoader(dataset, batch_sampler=batch_sampler, collate_fn=collate_batch)
 
 
 def evaluate_model(model, data_loader, criterion, device):
@@ -77,7 +115,7 @@ def train(num_epochs, batch_size, learning_rate, step_size, gamma, embedder_name
     tokenizer = AutoTokenizer.from_pretrained(embedder_name)
 
     config = CrossAttentionConfig(embedder_name)
-    cross_attention_model = CrossAttentionModel(config)
+    cross_attention_model = CrossAttentionModel(config, tokenizer)
 
     # Data loaders
     train_loader = create_data_loader(sample_dataset(dataset['train'], train_sample_size), tokenizer, batch_size)
@@ -95,23 +133,25 @@ def train(num_epochs, batch_size, learning_rate, step_size, gamma, embedder_name
 
     # Placeholders for best model tracking
     best_model = None
-    best_val_mae = None
+    best_val_mae = float('inf')
 
     # Training loop
     for epoch in range(num_epochs):
         epoch_loss = 0
-        for i, (inputs_1, inputs_2, inputs_3, label) in enumerate(train_loader):
-            inputs_1 = {key: value.to(device) for key, value in inputs_1.items()}
-            inputs_2 = {key: value.to(device) for key, value in inputs_2.items()}
-            inputs_3 = {key: value.to(device) for key, value in inputs_3.items()}
-            label = label.to(device)
+        for i, batch in enumerate(tqdm(train_loader, desc=f"Epoch {epoch+1}")):
+
+            previous_chat = {key: value.to(device) for key, value in batch["previous_chat"].items()}
+            last_message = {key: value.to(device) for key, value in batch["last_message"].items()}
+            concerning_definitions = {key: value.to(device) for key, value in batch["concerning_definitions"].items()}
+            label = batch["label"].to(device)
 
             optimizer.zero_grad()
-            logits = cross_attention_model(input_ids_1=inputs_1['input_ids'], attention_mask_1=inputs_1['attention_mask'],
-                                        input_ids_2=inputs_2['input_ids'], attention_mask_2=inputs_2['attention_mask'],
-                                        input_ids_3=inputs_3['input_ids'], attention_mask_3=inputs_3['attention_mask'])
+            logits = cross_attention_model(
+                previous_chat=previous_chat,
+                last_message=last_message,
+                concerning_definitions=concerning_definitions
+            )
             loss = criterion(logits, label)
-            wandb.log({"train_loss": loss})
             loss.backward()
             epoch_loss += loss.item()
 
@@ -119,10 +159,11 @@ def train(num_epochs, batch_size, learning_rate, step_size, gamma, embedder_name
             if (i + 1) % accumulation_steps == 0:
                 optimizer.step()
                 optimizer.zero_grad()
-        
-        wandb.log({f"epoch_{epoch}_train_loss": epoch_loss})
+
+        wandb.log({f"train_loss": epoch_loss})
 
         # Update the learning rate
+        wandb.log({"learning_rate": scheduler.get_lr()[0]})
         scheduler.step()
 
         # Evaluate on validation set
@@ -131,6 +172,10 @@ def train(num_epochs, batch_size, learning_rate, step_size, gamma, embedder_name
         # Log val mae / loss
         wandb.log({"val_mae": val_mae})
         wandb.log({"val_loss": val_loss})
+        for name, param in cross_attention_model.named_parameters():
+            if param.grad is not None:
+                wandb.log({f'{name}.grad': wandb.Histogram(param.grad.cpu().numpy())})
+
 
         # Save the best model based on validation mse
         if val_mae < best_val_mae:
@@ -161,4 +206,4 @@ def train(num_epochs, batch_size, learning_rate, step_size, gamma, embedder_name
     cross_attention_model.save_pretrained(wandb.run.dir)
 
     # Returning model and tokenizer to make training loop more generic
-    return cross_attention_model, tokenizer
+    return best_model, tokenizer
