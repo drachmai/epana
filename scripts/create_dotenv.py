@@ -47,6 +47,7 @@ if __name__ == '__main__':
         "DATASET_NAME",
         "HUGGINGFACE_ORG_NAME",
         "WANDB_API_KEY",
+        "HUGGINGFACE_WRITE_TOKEN"
     ]
     
     current_env = create_or_load_env_file()

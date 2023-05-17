@@ -1,0 +1,74 @@
+Some weights of the model checkpoint at roberta-base were not used when initializing RobertaModel: ['lm_head.dense.weight', 'lm_head.decoder.weight', 'lm_head.layer_norm.weight', 'lm_head.dense.bias', 'lm_head.bias', 'lm_head.layer_norm.bias']
+- This IS expected if you are initializing RobertaModel from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+- This IS NOT expected if you are initializing RobertaModel from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+
+
+
+Epoch 1:   0%|▎                                                                                                                                            | 3/1402 [05:44<44:35:00, 114.73s/it]Exception ignored in: <function _MultiProcessingDataLoaderIter.__del__ at 0x12462f420>
+Traceback (most recent call last):
+  File "/Users/jamesmarquardt/.local/share/virtualenvs/epana-5bA-42am-python/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1477, in __del__
+    def __del__(self):
+  File "/Users/jamesmarquardt/.local/share/virtualenvs/epana-5bA-42am-python/lib/python3.11/site-packages/torch/utils/data/_utils/signal_handling.py", line 66, in handler
+    _error_if_any_worker_fails()
+RuntimeError: DataLoader worker (pid 70582) is killed by signal: Interrupt: 2.
+Epoch 1:   0%|▎                                                                                                                                            | 3/1402 [05:50<45:25:25, 116.89s/it]
+Traceback (most recent call last):
+Error in sys.excepthook:
+Traceback (most recent call last):
+  File "/usr/local/Cellar/python@3.11/3.11.2_1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py", line 486, in format_frame_summary
+    anchors = _extract_caret_anchors_from_line_segment(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.11/3.11.2_1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/traceback.py", line 581, in _extract_caret_anchors_from_line_segment
+    tree = ast.parse(segment)
+           ^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.11/3.11.2_1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ast.py", line 50, in parse
+    return compile(source, filename, mode, flags,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
+Original exception was:
+Traceback (most recent call last):
+  File "/Users/jamesmarquardt/drachmai/epana/epana_modeling/trainers/local.py", line 43, in <module>
+    model, tokenizer = train(num_epochs, batch_size, learning_rate, step_size, gamma, embedder_name, dataset, accumulation_steps, strategy, mode, focal_alpha_positive, focal_alpha_negative, focal_gamma, train_sample_size=None, val_sample_size=None, test_sample_size=None)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jamesmarquardt/drachmai/epana/epana_modeling/train.py", line 185, in train
+    logits = concern_model(
+             ^^^^^^^^^^^^^^
+  File "/Users/jamesmarquardt/.local/share/virtualenvs/epana-5bA-42am-python/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jamesmarquardt/drachmai/epana/epana_modeling/model.py", line 120, in forward
+    previous_chat_outputs = self.embedding_model(**previous_chat)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jamesmarquardt/.local/share/virtualenvs/epana-5bA-42am-python/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jamesmarquardt/.local/share/virtualenvs/epana-5bA-42am-python/lib/python3.11/site-packages/transformers/models/roberta/modeling_roberta.py", line 852, in forward
+    encoder_outputs = self.encoder(
+                      ^^^^^^^^^^^^^
+  File "/Users/jamesmarquardt/.local/share/virtualenvs/epana-5bA-42am-python/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jamesmarquardt/.local/share/virtualenvs/epana-5bA-42am-python/lib/python3.11/site-packages/transformers/models/roberta/modeling_roberta.py", line 527, in forward
+    layer_outputs = layer_module(
+                    ^^^^^^^^^^^^^
+  File "/Users/jamesmarquardt/.local/share/virtualenvs/epana-5bA-42am-python/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jamesmarquardt/.local/share/virtualenvs/epana-5bA-42am-python/lib/python3.11/site-packages/transformers/models/roberta/modeling_roberta.py", line 453, in forward
+    layer_output = apply_chunking_to_forward(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jamesmarquardt/.local/share/virtualenvs/epana-5bA-42am-python/lib/python3.11/site-packages/transformers/pytorch_utils.py", line 236, in apply_chunking_to_forward
+    return forward_fn(*input_tensors)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jamesmarquardt/.local/share/virtualenvs/epana-5bA-42am-python/lib/python3.11/site-packages/transformers/models/roberta/modeling_roberta.py", line 465, in feed_forward_chunk
+    intermediate_output = self.intermediate(attention_output)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jamesmarquardt/.local/share/virtualenvs/epana-5bA-42am-python/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jamesmarquardt/.local/share/virtualenvs/epana-5bA-42am-python/lib/python3.11/site-packages/transformers/models/roberta/modeling_roberta.py", line 363, in forward
+    hidden_states = self.dense(hidden_states)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jamesmarquardt/.local/share/virtualenvs/epana-5bA-42am-python/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^

@@ -37,3 +37,7 @@ else
 	pipenv run pip freeze > epana_modeling/requirements.txt
 	AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) AWS_REGION=$(AWS_REGION) WANDB_API_KEY=$(WANDB_API_KEY) SAGEMAKER_EXECUTION_ROLE_ARN=$(SAGEMAKER_EXECUTION_ROLE_ARN) PYTHONPATH=scripts pipenv run train_sagemaker --s3_dataset_uri $(DATASET_S3_URI) --download_model_path $(DOWNLOAD_MODEL_PATH)
 endif
+
+upload-model-huggingface:
+	pipenv run huggingface-cli login --token $(HUGGINGFACE_WRITE_TOKEN)
+	pipenv run upload_model_huggingface --model_source_dir $(MODEL_SOURCE_DIR) --huggingface_org $(HUGGINGFACE_ORG) --repo_name $(REPO_NAME)

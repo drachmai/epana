@@ -1,6 +1,7 @@
 import os
 import time
 import random
+from functools import partial
 
 import torch
 from transformers import AutoTokenizer
@@ -10,9 +11,10 @@ import wandb
 from tqdm import tqdm
 from torch.utils.data import BatchSampler, RandomSampler
 import numpy as np
+from sklearn.metrics import accuracy_score, roc_auc_score, f1_score, precision_score, recall_score
+from accelerate import Accelerator
 
-
-from model import ConcernDataset, CrossAttentionModel, CrossAttentionConfig
+from model import ConcernDataset, ConcernModel, ConcernModelConfig, FocalLoss
 
 
 def sample_dataset(data, sample_size):
@@ -23,54 +25,125 @@ def sample_dataset(data, sample_size):
     return sampled_data
 
 
-def create_data_loader(data, tokenizer, batch_size):
-    dataset = ConcernDataset(data, tokenizer)
-    input_lengths = dataset.lengths
-    sorted_indices = np.argsort(input_lengths)[::-1]
-    sorted_batches = np.split(sorted_indices, range(batch_size, len(sorted_indices), batch_size))
-    batch_sampler = BatchSampler(RandomSampler(sorted_batches), batch_size, drop_last=False)
-    return DataLoader(dataset, batch_sampler=batch_sampler)
+def get_classification_metrics(logits, targets):
+    # Convert logits to probabilities
+    probs = torch.nn.functional.softmax(logits, dim=1).cpu().detach().numpy()
+
+    # Convert targets to cpu
+    targets = targets.cpu().numpy()
+
+    # Get class predictions
+    preds = np.argmax(probs, axis=1)
+
+    # Probability of the positive class
+    probs = probs[:, 1]
+
+    # Calculate metrics
+    accuracy = accuracy_score(targets, preds)
+    auc = roc_auc_score(targets, probs)
+    f1 = f1_score(targets, preds)
+    precision = precision_score(targets, preds)
+    recall = recall_score(targets, preds)
+
+    return accuracy, auc, f1, precision, recall
 
 
-def evaluate_model(model, data_loader, criterion, device):
+def evaluate_model(model, data_loader, criterion, mode, device):
     model.eval()
     total_loss = 0
     mae_sum = 0
+    all_preds = []
+    all_targets = []
+    all_probs = []
 
     with torch.no_grad():
-        for inputs_1, inputs_2, inputs_3, label in data_loader:
-            inputs_1 = {key: value.to(device) for key, value in inputs_1.items()}
-            inputs_2 = {key: value.to(device) for key, value in inputs_2.items()}
-            inputs_3 = {key: value.to(device) for key, value in inputs_3.items()}
-            label = label.to(device)
+        for batch in data_loader:
+            previous_chat_input_ids = batch["previous_chat"]["input_ids"].to(device)
+            previous_chat_attention_mask = batch["previous_chat"]["attention_mask"].to(device)
 
-            logits = model(input_ids_1=inputs_1['input_ids'], attention_mask_1=inputs_1['attention_mask'],
-            input_ids_2=inputs_2['input_ids'], attention_mask_2=inputs_2['attention_mask'],
-            input_ids_3=inputs_3['input_ids'], attention_mask_3=inputs_3['attention_mask']).unsqueeze(-1)
+            last_message_input_ids = batch["last_message"]["input_ids"].to(device)
+            last_message_attention_mask = batch["last_message"]["attention_mask"].to(device)
 
-            loss = criterion(logits, label)
+            concerning_definitions_input_ids = batch["concerning_definitions"]["input_ids"].to(device)
+            concerning_definitions_attention_mask = batch["concerning_definitions"]["attention_mask"].to(device)
+
+            target = batch["target"].to(device)
+
+            logits = model(
+                previous_chat={
+                    'input_ids': previous_chat_input_ids, 
+                    'attention_mask': previous_chat_attention_mask
+                },
+                last_message={
+                    'input_ids': last_message_input_ids, 
+                    'attention_mask': last_message_attention_mask
+                },
+                concerning_definitions={
+                    'input_ids': concerning_definitions_input_ids, 
+                    'attention_mask': concerning_definitions_attention_mask
+                }
+            )
+
+            loss = criterion(logits, target)
             total_loss += loss.item()
 
-            # Calculate mean absolute error (MAE)
-            mae_sum += torch.abs(logits - label).sum().item()
+            if mode == "regression":
+                # Calculate mean absolute error (MAE)
+                mae_sum += torch.abs(logits - target).sum().item()
+            elif mode == "classification":
+                probs = torch.nn.functional.softmax(logits, dim=1).cpu().detach().numpy()
+                local_targets = target.cpu().numpy()
+                preds = np.argmax(probs, axis=1)
+                probs = probs[:, 1]
 
-    avg_mae = mae_sum / len(data_loader.dataset)
-    avg_loss = total_loss / len(data_loader)
-    return avg_mae, avg_loss
+                all_preds.extend(preds)
+                all_targets.extend(local_targets)
+                all_probs.extend(probs)
+
+    if mode == "regression":
+        avg_mae = mae_sum / len(data_loader.dataset)
+        metrics = {
+            "avg_mae": avg_mae,
+            "avg_loss": total_loss / len(data_loader)
+        }
+        tracked_metric = avg_mae
+    elif mode == "classification":
+        auc = roc_auc_score(all_targets, all_probs)
+        metrics = {
+            "accuracy": accuracy_score(all_targets, all_preds),
+            "auc": auc,
+            "f1": f1_score(all_targets, all_preds),
+            "precision": precision_score(all_targets, all_preds),
+            "recall": recall_score(all_targets, all_preds)
+        }   
+        tracked_metric = auc * -1
+
+    metrics['loss'] = total_loss / len(data_loader)
+    
+    return tracked_metric, metrics
 
 
-def train(num_epochs, batch_size, learning_rate, step_size, gamma, embedder_name, dataset, accumulation_steps, train_sample_size=None, val_sample_size=None, test_sample_size=None):
+def train(num_epochs, batch_size, learning_rate, step_size, gamma, embedder_name, dataset, accumulation_steps, strategy, mode, focal_alpha_positive=None, focal_alpha_negative=None, focal_gamma=None, train_sample_size=None, val_sample_size=None, test_sample_size=None):
+    # Start accelerator
+    accelerator = Accelerator()
+    
     # Set up wandb
-    wandb.init(
-        project="epana",
-        config={
+    log_config = {
             "epochs": num_epochs,
             "batch_size": batch_size,
             "learning_rate": learning_rate,
             "step_size": step_size,
             "gamma": gamma,
             "embedder_name": embedder_name,
+            "focal_alpha_positive": focal_alpha_positive,
+            "focal_alpha_negative": focal_alpha_negative,
+            "focal_gamma": focal_gamma,
+            "strategy": strategy,
+            "mode": mode
         }
+    wandb.init(
+        project="epana",
+        config=log_config
     )
 
     # Run on gpu is available
@@ -83,44 +156,81 @@ def train(num_epochs, batch_size, learning_rate, step_size, gamma, embedder_name
     # Load this here and pass to model so that we can ensure there is no tokenizer mismatch later (should be same as embedder)
     tokenizer = AutoTokenizer.from_pretrained(embedder_name)
 
-    config = CrossAttentionConfig(embedder_name)
-    cross_attention_model = CrossAttentionModel(config, tokenizer)
-
-    # Data loaders
-    train_loader = create_data_loader(sample_dataset(dataset['train'], train_sample_size), tokenizer, batch_size)
-    val_loader = create_data_loader(sample_dataset(dataset['validation'], val_sample_size), tokenizer, batch_size)
-    test_loader = create_data_loader(sample_dataset(dataset['test'], test_sample_size), tokenizer, batch_size)
-
-    # Set scheduler
-    criterion = torch.nn.MSELoss()
-    optimizer = torch.optim.Adam(cross_attention_model.parameters(), lr=learning_rate)
-    scheduler = StepLR(optimizer, step_size=step_size, gamma=gamma)
+    config = ConcernModelConfig(embedder_name, strategy=strategy)
+    
+    concern_model = ConcernModel(config)
 
     # Set train and load to device (gpu if available)
-    cross_attention_model.train()
-    cross_attention_model.to(device)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    concern_model.to(device)
+
+    if torch.cuda.device_count() > 1:
+        print(f"Using {torch.cuda.device_count()} GPUs!")
+        concern_model = torch.nn.DataParallel(concern_model)
+
+    # Data loaders
+    train_dataset = ConcernDataset(sample_dataset(dataset['train'], train_sample_size), tokenizer, mode)
+    validation_dataset = ConcernDataset(sample_dataset(dataset['validation'], val_sample_size), tokenizer, mode)
+    test_dataset = ConcernDataset(sample_dataset(dataset['test'], test_sample_size), tokenizer, mode)
+
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+    validation_loader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+
+    # Set scheduler
+    if mode == "regression":
+        criterion = torch.nn.MSELoss()
+    elif mode == "classification":
+        criterion = FocalLoss(alpha=[focal_alpha_positive, focal_alpha_negative], gamma=focal_gamma)
+
+    criterion = criterion.to(device)  # Move the criterion to the device
+
+    optimizer = torch.optim.Adam(concern_model.parameters(), lr=learning_rate)
+    scheduler = StepLR(optimizer, step_size=step_size, gamma=gamma)
+
+    concern_model.train()
 
     # Placeholders for best model tracking
     best_model = None
-    best_val_mae = float('inf')
+
+    best_val_metric = float('inf')
+
+    # Prepare with accelerator
+    train_loader, validation_loader, test_loader, model, optimizer, criterion = accelerator.prepare(
+        train_loader, validation_loader, test_loader, model, optimizer, criterion
+    )
 
     # Training loop
     for epoch in range(num_epochs):
         epoch_loss = 0
-        for i, batch in enumerate(tqdm(train_loader, desc=f"Epoch {epoch+1}")):
+        for i, batch in enumerate(tqdm(train_loader, desc=f"Epoch {epoch+1}")):            
+            previous_chat_input_ids = batch["previous_chat"]["input_ids"].to(device)
+            previous_chat_attention_mask = batch["previous_chat"]["attention_mask"].to(device)
 
-            previous_chat = batch["previous_chat"].to(device)
-            last_message = batch["last_message"].to(device)
-            concerning_definitions = batch["concerning_definitions"].to(device)
-            label = batch["label"].to(device)
+            last_message_input_ids = batch["last_message"]["input_ids"].to(device)
+            last_message_attention_mask = batch["last_message"]["attention_mask"].to(device)
+
+            concerning_definitions_input_ids = batch["concerning_definitions"]["input_ids"].to(device)
+            concerning_definitions_attention_mask = batch["concerning_definitions"]["attention_mask"].to(device)
+
+            target = batch["target"].to(device)
 
             optimizer.zero_grad()
-            logits = cross_attention_model(
-                previous_chat=previous_chat,
-                last_message=last_message,
-                concerning_definitions=concerning_definitions
+            logits = concern_model(
+                previous_chat={
+                    'input_ids': previous_chat_input_ids, 
+                    'attention_mask': previous_chat_attention_mask
+                },
+                last_message={
+                    'input_ids': last_message_input_ids, 
+                    'attention_mask': last_message_attention_mask
+                },
+                concerning_definitions={
+                    'input_ids': concerning_definitions_input_ids, 
+                    'attention_mask': concerning_definitions_attention_mask
+                }
             )
-            loss = criterion(logits, label)
+            loss = criterion(logits, target)
             loss.backward()
             epoch_loss += loss.item()
 
@@ -136,43 +246,41 @@ def train(num_epochs, batch_size, learning_rate, step_size, gamma, embedder_name
         scheduler.step()
 
         # Evaluate on validation set
-        val_mae, val_loss = evaluate_model(cross_attention_model, val_loader, criterion, device)
+        tracked_val_metric, val_metrics = evaluate_model(concern_model, validation_loader, criterion, mode, device)
 
         # Log val mae / loss
-        wandb.log({"val_mae": val_mae})
-        wandb.log({"val_loss": val_loss})
-        for name, param in cross_attention_model.named_parameters():
+        wandb.log({"val_metrics": val_metrics})
+        for name, param in concern_model.named_parameters():
             if param.grad is not None:
                 wandb.log({f'{name}.grad': wandb.Histogram(param.grad.cpu().numpy())})
 
 
         # Save the best model based on validation mse
-        if val_mae < best_val_mae:
-            best_val_mae = val_mae
-            best_model = cross_attention_model.state_dict()
+        if tracked_val_metric < best_val_metric:
+            best_val_metric = tracked_val_metric
+            best_model = concern_model.state_dict()
 
             timestamp = int(time.time())
             checkpoint_path = f'checkpoints/best_model_{timestamp}'
 
-            cross_attention_model.save_pretrained(checkpoint_path)
+            concern_model.save_pretrained(checkpoint_path)
             tokenizer.save_pretrained(checkpoint_path)
 
         torch.cuda.empty_cache()
 
     # Load the best model
-    best_model = CrossAttentionModel.from_pretrained(checkpoint_path)
+    best_model = ConcernModel.from_pretrained(checkpoint_path)
     best_model.to(device)
     tokenizer = AutoTokenizer.from_pretrained(checkpoint_path)
 
     # Evaluate on the test set
-    test_mae, test_loss = evaluate_model(best_model, test_loader, criterion, device)
+    _, test_metrics = evaluate_model(best_model, test_loader, criterion, mode, device)
 
     # Log test mae / loss
-    wandb.log({"test_mae": test_mae})
-    wandb.log({"test_loss": test_loss})
+    wandb.log({"test_metrics": test_metrics})
 
     # Save model to wandb
-    cross_attention_model.save_pretrained(wandb.run.dir)
+    best_model.save_pretrained(wandb.run.dir)
 
     # Returning model and tokenizer to make training loop more generic
     return best_model, tokenizer

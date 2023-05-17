@@ -1,0 +1,50 @@
+Some weights of the model checkpoint at roberta-base were not used when initializing RobertaModel: ['lm_head.layer_norm.weight', 'lm_head.bias', 'lm_head.layer_norm.bias', 'lm_head.dense.bias', 'lm_head.decoder.weight', 'lm_head.dense.weight']
+- This IS expected if you are initializing RobertaModel from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+- This IS NOT expected if you are initializing RobertaModel from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+Epoch 1:   0%|                                                                                                                                                         | 0/1402 [00:06<?, ?it/s]
+Traceback (most recent call last):
+  File "/Users/jamesmarquardt/drachmai/epana/epana_modeling/trainers/local.py", line 41, in <module>
+    model, tokenizer = train(num_epochs, batch_size, learning_rate, step_size, gamma, embedder_name, dataset, accumulation_steps, strategy, mode, focal_alpha, focal_gamma, train_sample_size=None, val_sample_size=None, test_sample_size=None)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jamesmarquardt/drachmai/epana/epana_modeling/train.py", line 176, in train
+    logits = concern_model(
+             ^^^^^^^^^^^^^^
+  File "/Users/jamesmarquardt/.local/share/virtualenvs/epana-5bA-42am-python/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jamesmarquardt/drachmai/epana/epana_modeling/model.py", line 118, in forward
+    previous_chat_outputs = self.embedding_model(**previous_chat)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jamesmarquardt/.local/share/virtualenvs/epana-5bA-42am-python/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jamesmarquardt/.local/share/virtualenvs/epana-5bA-42am-python/lib/python3.11/site-packages/transformers/models/roberta/modeling_roberta.py", line 852, in forward
+    encoder_outputs = self.encoder(
+                      ^^^^^^^^^^^^^
+  File "/Users/jamesmarquardt/.local/share/virtualenvs/epana-5bA-42am-python/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jamesmarquardt/.local/share/virtualenvs/epana-5bA-42am-python/lib/python3.11/site-packages/transformers/models/roberta/modeling_roberta.py", line 527, in forward
+    layer_outputs = layer_module(
+                    ^^^^^^^^^^^^^
+  File "/Users/jamesmarquardt/.local/share/virtualenvs/epana-5bA-42am-python/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jamesmarquardt/.local/share/virtualenvs/epana-5bA-42am-python/lib/python3.11/site-packages/transformers/models/roberta/modeling_roberta.py", line 411, in forward
+    self_attention_outputs = self.attention(
+                             ^^^^^^^^^^^^^^^
+  File "/Users/jamesmarquardt/.local/share/virtualenvs/epana-5bA-42am-python/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jamesmarquardt/.local/share/virtualenvs/epana-5bA-42am-python/lib/python3.11/site-packages/transformers/models/roberta/modeling_roberta.py", line 338, in forward
+    self_outputs = self.self(
+                   ^^^^^^^^^^
+  File "/Users/jamesmarquardt/.local/share/virtualenvs/epana-5bA-42am-python/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jamesmarquardt/.local/share/virtualenvs/epana-5bA-42am-python/lib/python3.11/site-packages/transformers/models/roberta/modeling_roberta.py", line 264, in forward
+    attention_probs = nn.functional.softmax(attention_scores, dim=-1)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jamesmarquardt/.local/share/virtualenvs/epana-5bA-42am-python/lib/python3.11/site-packages/torch/nn/functional.py", line 1813, in softmax
+    def softmax(input: Tensor, dim: Optional[int] = None, _stacklevel: int = 3, dtype: Optional[DType] = None) -> Tensor:
+KeyboardInterrupt
