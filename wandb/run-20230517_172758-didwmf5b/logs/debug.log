@@ -25,3 +25,4 @@ config: {'epochs': 5, 'batch_size': 16, 'learning_rate': 1e-05, 'step_size': 30,
 2023-05-17 17:28:00,223 INFO    MainThread:80874 [wandb_run.py:_redirect():2078] Wrapping output streams.
 2023-05-17 17:28:00,223 INFO    MainThread:80874 [wandb_run.py:_redirect():2103] Redirects installed.
 2023-05-17 17:28:00,224 INFO    MainThread:80874 [wandb_init.py:init():829] run started, returning control to user process
+2023-05-17 17:29:02,449 WARNING MsgRouterThr:80874 [router.py:message_loop():77] message_loop has been closed

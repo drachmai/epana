@@ -196,8 +196,8 @@ def train(num_epochs, batch_size, learning_rate, step_size, gamma, embedder_name
     best_val_metric = float('inf')
 
     # Prepare with accelerator
-    train_loader, validation_loader, test_loader, model, optimizer, criterion = accelerator.prepare(
-        train_loader, validation_loader, test_loader, model, optimizer, criterion
+    train_loader, validation_loader, test_loader, concern_model, optimizer, criterion = accelerator.prepare(
+        train_loader, validation_loader, test_loader, concern_model, optimizer, criterion
     )
 
     # Training loop

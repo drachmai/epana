@@ -44,3 +44,148 @@
 2023-05-17 17:28:15,227 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: stop_status
 2023-05-17 17:28:15,227 DEBUG   SenderThread:80915 [sender.py:send_request():402] send_request: stop_status
 2023-05-17 17:28:20,367 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: status_report
+2023-05-17 17:28:25,376 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: status_report
+2023-05-17 17:28:30,226 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-17 17:28:30,227 DEBUG   SenderThread:80915 [sender.py:send_request():402] send_request: stop_status
+2023-05-17 17:28:30,423 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: status_report
+2023-05-17 17:28:31,612 INFO    Thread-12 :80915 [dir_watcher.py:_on_file_modified():295] file/dir modified: /Users/jamesmarquardt/drachmai/epana/wandb/run-20230517_172758-didwmf5b/files/config.yaml
+2023-05-17 17:28:35,676 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: status_report
+2023-05-17 17:28:36,622 INFO    Thread-12 :80915 [dir_watcher.py:_on_file_created():278] file/dir created: /Users/jamesmarquardt/drachmai/epana/wandb/run-20230517_172758-didwmf5b/files/output.log
+2023-05-17 17:28:38,628 INFO    Thread-12 :80915 [dir_watcher.py:_on_file_modified():295] file/dir modified: /Users/jamesmarquardt/drachmai/epana/wandb/run-20230517_172758-didwmf5b/files/output.log
+2023-05-17 17:28:40,917 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: status_report
+2023-05-17 17:28:45,927 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: status_report
+2023-05-17 17:28:46,262 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-17 17:28:46,264 DEBUG   SenderThread:80915 [sender.py:send_request():402] send_request: stop_status
+2023-05-17 17:28:51,485 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: status_report
+2023-05-17 17:28:54,128 DEBUG   SenderThread:80915 [sender.py:send():375] send: exit
+2023-05-17 17:28:54,128 INFO    SenderThread:80915 [sender.py:send_exit():598] handling exit code: 1
+2023-05-17 17:28:54,128 INFO    SenderThread:80915 [sender.py:send_exit():600] handling runtime: 54
+2023-05-17 17:28:54,164 INFO    SenderThread:80915 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-17 17:28:54,164 INFO    SenderThread:80915 [sender.py:send_exit():606] send defer
+2023-05-17 17:28:54,165 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: defer
+2023-05-17 17:28:54,165 INFO    HandlerThread:80915 [handler.py:handle_request_defer():170] handle defer: 0
+2023-05-17 17:28:54,165 DEBUG   SenderThread:80915 [sender.py:send_request():402] send_request: defer
+2023-05-17 17:28:54,165 INFO    SenderThread:80915 [sender.py:send_request_defer():622] handle sender defer: 0
+2023-05-17 17:28:54,165 INFO    SenderThread:80915 [sender.py:transition_state():626] send defer: 1
+2023-05-17 17:28:54,166 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: defer
+2023-05-17 17:28:54,166 INFO    HandlerThread:80915 [handler.py:handle_request_defer():170] handle defer: 1
+2023-05-17 17:28:54,166 DEBUG   SenderThread:80915 [sender.py:send_request():402] send_request: defer
+2023-05-17 17:28:54,166 INFO    SenderThread:80915 [sender.py:send_request_defer():622] handle sender defer: 1
+2023-05-17 17:28:54,166 INFO    SenderThread:80915 [sender.py:transition_state():626] send defer: 2
+2023-05-17 17:28:54,166 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: defer
+2023-05-17 17:28:54,167 INFO    HandlerThread:80915 [handler.py:handle_request_defer():170] handle defer: 2
+2023-05-17 17:28:54,167 INFO    HandlerThread:80915 [system_monitor.py:finish():190] Stopping system monitor
+2023-05-17 17:28:54,167 DEBUG   SystemMonitor:80915 [system_monitor.py:_start():159] Starting system metrics aggregation loop
+2023-05-17 17:28:54,167 INFO    HandlerThread:80915 [interfaces.py:finish():202] Joined cpu monitor
+2023-05-17 17:28:54,167 DEBUG   SystemMonitor:80915 [system_monitor.py:_start():166] Finished system metrics aggregation loop
+2023-05-17 17:28:54,167 INFO    HandlerThread:80915 [interfaces.py:finish():202] Joined disk monitor
+2023-05-17 17:28:54,168 DEBUG   SystemMonitor:80915 [system_monitor.py:_start():170] Publishing last batch of metrics
+2023-05-17 17:28:54,168 INFO    HandlerThread:80915 [interfaces.py:finish():202] Joined memory monitor
+2023-05-17 17:28:54,169 INFO    HandlerThread:80915 [interfaces.py:finish():202] Joined network monitor
+2023-05-17 17:28:54,170 DEBUG   SenderThread:80915 [sender.py:send_request():402] send_request: defer
+2023-05-17 17:28:54,170 INFO    SenderThread:80915 [sender.py:send_request_defer():622] handle sender defer: 2
+2023-05-17 17:28:54,170 INFO    SenderThread:80915 [sender.py:transition_state():626] send defer: 3
+2023-05-17 17:28:54,170 DEBUG   SenderThread:80915 [sender.py:send():375] send: stats
+2023-05-17 17:28:54,170 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: defer
+2023-05-17 17:28:54,170 INFO    HandlerThread:80915 [handler.py:handle_request_defer():170] handle defer: 3
+2023-05-17 17:28:54,170 DEBUG   SenderThread:80915 [sender.py:send_request():402] send_request: defer
+2023-05-17 17:28:54,171 INFO    SenderThread:80915 [sender.py:send_request_defer():622] handle sender defer: 3
+2023-05-17 17:28:54,171 INFO    SenderThread:80915 [sender.py:transition_state():626] send defer: 4
+2023-05-17 17:28:54,171 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: defer
+2023-05-17 17:28:54,171 INFO    HandlerThread:80915 [handler.py:handle_request_defer():170] handle defer: 4
+2023-05-17 17:28:54,171 DEBUG   SenderThread:80915 [sender.py:send_request():402] send_request: defer
+2023-05-17 17:28:54,171 INFO    SenderThread:80915 [sender.py:send_request_defer():622] handle sender defer: 4
+2023-05-17 17:28:54,171 INFO    SenderThread:80915 [sender.py:transition_state():626] send defer: 5
+2023-05-17 17:28:54,171 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: defer
+2023-05-17 17:28:54,171 INFO    HandlerThread:80915 [handler.py:handle_request_defer():170] handle defer: 5
+2023-05-17 17:28:54,172 DEBUG   SenderThread:80915 [sender.py:send():375] send: summary
+2023-05-17 17:28:54,173 INFO    SenderThread:80915 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-17 17:28:54,173 DEBUG   SenderThread:80915 [sender.py:send_request():402] send_request: defer
+2023-05-17 17:28:54,173 INFO    SenderThread:80915 [sender.py:send_request_defer():622] handle sender defer: 5
+2023-05-17 17:28:54,173 INFO    SenderThread:80915 [sender.py:transition_state():626] send defer: 6
+2023-05-17 17:28:54,173 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: defer
+2023-05-17 17:28:54,173 INFO    HandlerThread:80915 [handler.py:handle_request_defer():170] handle defer: 6
+2023-05-17 17:28:54,173 DEBUG   SenderThread:80915 [sender.py:send_request():402] send_request: defer
+2023-05-17 17:28:54,173 INFO    SenderThread:80915 [sender.py:send_request_defer():622] handle sender defer: 6
+2023-05-17 17:28:54,174 INFO    SenderThread:80915 [sender.py:transition_state():626] send defer: 7
+2023-05-17 17:28:54,174 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: status_report
+2023-05-17 17:28:54,174 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: defer
+2023-05-17 17:28:54,174 INFO    HandlerThread:80915 [handler.py:handle_request_defer():170] handle defer: 7
+2023-05-17 17:28:54,174 DEBUG   SenderThread:80915 [sender.py:send_request():402] send_request: defer
+2023-05-17 17:28:54,174 INFO    SenderThread:80915 [sender.py:send_request_defer():622] handle sender defer: 7
+2023-05-17 17:28:54,689 INFO    Thread-12 :80915 [dir_watcher.py:_on_file_modified():295] file/dir modified: /Users/jamesmarquardt/drachmai/epana/wandb/run-20230517_172758-didwmf5b/files/wandb-summary.json
+2023-05-17 17:28:55,129 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: poll_exit
+2023-05-17 17:28:55,931 INFO    SenderThread:80915 [sender.py:transition_state():626] send defer: 8
+2023-05-17 17:28:55,931 DEBUG   SenderThread:80915 [sender.py:send_request():402] send_request: poll_exit
+2023-05-17 17:28:55,931 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: defer
+2023-05-17 17:28:55,931 INFO    HandlerThread:80915 [handler.py:handle_request_defer():170] handle defer: 8
+2023-05-17 17:28:55,931 DEBUG   SenderThread:80915 [sender.py:send_request():402] send_request: defer
+2023-05-17 17:28:55,931 INFO    SenderThread:80915 [sender.py:send_request_defer():622] handle sender defer: 8
+2023-05-17 17:28:55,970 INFO    SenderThread:80915 [sender.py:transition_state():626] send defer: 9
+2023-05-17 17:28:55,971 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: defer
+2023-05-17 17:28:55,971 DEBUG   SenderThread:80915 [sender.py:send():375] send: artifact
+2023-05-17 17:28:55,971 INFO    HandlerThread:80915 [handler.py:handle_request_defer():170] handle defer: 9
+2023-05-17 17:28:56,134 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: poll_exit
+2023-05-17 17:28:56,698 INFO    Thread-12 :80915 [dir_watcher.py:_on_file_modified():295] file/dir modified: /Users/jamesmarquardt/drachmai/epana/wandb/run-20230517_172758-didwmf5b/files/output.log
+2023-05-17 17:28:57,966 INFO    wandb-upload_0:80915 [upload_job.py:push():95] Uploaded file /Users/jamesmarquardt/Library/Application Support/wandb/artifacts/staging/tmpuatbnx1j
+2023-05-17 17:28:57,966 INFO    wandb-upload_1:80915 [upload_job.py:push():95] Uploaded file /Users/jamesmarquardt/Library/Application Support/wandb/artifacts/staging/tmpq9rg8ep6
+2023-05-17 17:28:59,327 INFO    SenderThread:80915 [sender.py:send_artifact():1474] sent artifact job-https___github.com_drachmai_epana.git_epana_modeling_trainers_local.py - {'id': 'QXJ0aWZhY3Q6NDU4NzI3MDYw', 'digest': '44826868499040e1bc77c84c5330f778', 'state': 'PENDING', 'aliases': [], 'artifactSequence': {'id': 'QXJ0aWZhY3RDb2xsZWN0aW9uOjY5MTEyMTA0', 'latestArtifact': {'id': 'QXJ0aWZhY3Q6NDU4NDcyOTQ3', 'versionIndex': 4}}, 'version': 'latest'}
+2023-05-17 17:28:59,327 DEBUG   SenderThread:80915 [sender.py:send_request():402] send_request: defer
+2023-05-17 17:28:59,327 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: status_report
+2023-05-17 17:28:59,327 INFO    SenderThread:80915 [sender.py:send_request_defer():622] handle sender defer: 9
+2023-05-17 17:28:59,328 INFO    SenderThread:80915 [dir_watcher.py:finish():365] shutting down directory watcher
+2023-05-17 17:28:59,706 INFO    SenderThread:80915 [dir_watcher.py:finish():395] scan: /Users/jamesmarquardt/drachmai/epana/wandb/run-20230517_172758-didwmf5b/files
+2023-05-17 17:28:59,707 INFO    SenderThread:80915 [dir_watcher.py:finish():409] scan save: /Users/jamesmarquardt/drachmai/epana/wandb/run-20230517_172758-didwmf5b/files/requirements.txt requirements.txt
+2023-05-17 17:28:59,707 INFO    SenderThread:80915 [dir_watcher.py:finish():409] scan save: /Users/jamesmarquardt/drachmai/epana/wandb/run-20230517_172758-didwmf5b/files/output.log output.log
+2023-05-17 17:28:59,710 INFO    SenderThread:80915 [dir_watcher.py:finish():409] scan save: /Users/jamesmarquardt/drachmai/epana/wandb/run-20230517_172758-didwmf5b/files/config.yaml config.yaml
+2023-05-17 17:28:59,710 INFO    SenderThread:80915 [dir_watcher.py:finish():409] scan save: /Users/jamesmarquardt/drachmai/epana/wandb/run-20230517_172758-didwmf5b/files/wandb-summary.json wandb-summary.json
+2023-05-17 17:28:59,714 INFO    SenderThread:80915 [dir_watcher.py:finish():409] scan save: /Users/jamesmarquardt/drachmai/epana/wandb/run-20230517_172758-didwmf5b/files/wandb-metadata.json wandb-metadata.json
+2023-05-17 17:28:59,714 INFO    SenderThread:80915 [sender.py:transition_state():626] send defer: 10
+2023-05-17 17:28:59,716 DEBUG   SenderThread:80915 [sender.py:send_request():402] send_request: poll_exit
+2023-05-17 17:28:59,716 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: defer
+2023-05-17 17:28:59,717 INFO    HandlerThread:80915 [handler.py:handle_request_defer():170] handle defer: 10
+2023-05-17 17:28:59,718 DEBUG   SenderThread:80915 [sender.py:send_request():402] send_request: defer
+2023-05-17 17:28:59,718 INFO    SenderThread:80915 [sender.py:send_request_defer():622] handle sender defer: 10
+2023-05-17 17:28:59,718 INFO    SenderThread:80915 [file_pusher.py:finish():167] shutting down file pusher
+2023-05-17 17:29:00,502 INFO    wandb-upload_2:80915 [upload_job.py:push():137] Uploaded file /Users/jamesmarquardt/drachmai/epana/wandb/run-20230517_172758-didwmf5b/files/config.yaml
+2023-05-17 17:29:00,506 INFO    wandb-upload_0:80915 [upload_job.py:push():137] Uploaded file /Users/jamesmarquardt/drachmai/epana/wandb/run-20230517_172758-didwmf5b/files/requirements.txt
+2023-05-17 17:29:00,563 INFO    wandb-upload_3:80915 [upload_job.py:push():137] Uploaded file /Users/jamesmarquardt/drachmai/epana/wandb/run-20230517_172758-didwmf5b/files/wandb-summary.json
+2023-05-17 17:29:00,587 INFO    wandb-upload_1:80915 [upload_job.py:push():137] Uploaded file /Users/jamesmarquardt/drachmai/epana/wandb/run-20230517_172758-didwmf5b/files/output.log
+2023-05-17 17:29:00,788 INFO    Thread-11 (_thread_body):80915 [sender.py:transition_state():626] send defer: 11
+2023-05-17 17:29:00,789 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: defer
+2023-05-17 17:29:00,789 INFO    HandlerThread:80915 [handler.py:handle_request_defer():170] handle defer: 11
+2023-05-17 17:29:00,790 DEBUG   SenderThread:80915 [sender.py:send_request():402] send_request: defer
+2023-05-17 17:29:00,790 INFO    SenderThread:80915 [sender.py:send_request_defer():622] handle sender defer: 11
+2023-05-17 17:29:00,790 INFO    SenderThread:80915 [file_pusher.py:join():172] waiting for file pusher
+2023-05-17 17:29:00,790 INFO    SenderThread:80915 [sender.py:transition_state():626] send defer: 12
+2023-05-17 17:29:00,790 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: defer
+2023-05-17 17:29:00,791 INFO    HandlerThread:80915 [handler.py:handle_request_defer():170] handle defer: 12
+2023-05-17 17:29:00,791 DEBUG   SenderThread:80915 [sender.py:send_request():402] send_request: defer
+2023-05-17 17:29:00,791 INFO    SenderThread:80915 [sender.py:send_request_defer():622] handle sender defer: 12
+2023-05-17 17:29:00,982 INFO    SenderThread:80915 [sender.py:transition_state():626] send defer: 13
+2023-05-17 17:29:00,982 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: defer
+2023-05-17 17:29:00,982 INFO    HandlerThread:80915 [handler.py:handle_request_defer():170] handle defer: 13
+2023-05-17 17:29:00,982 DEBUG   SenderThread:80915 [sender.py:send_request():402] send_request: defer
+2023-05-17 17:29:00,982 INFO    SenderThread:80915 [sender.py:send_request_defer():622] handle sender defer: 13
+2023-05-17 17:29:00,983 INFO    SenderThread:80915 [sender.py:transition_state():626] send defer: 14
+2023-05-17 17:29:00,983 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: defer
+2023-05-17 17:29:00,983 INFO    HandlerThread:80915 [handler.py:handle_request_defer():170] handle defer: 14
+2023-05-17 17:29:00,983 DEBUG   SenderThread:80915 [sender.py:send():375] send: final
+2023-05-17 17:29:00,984 DEBUG   SenderThread:80915 [sender.py:send():375] send: footer
+2023-05-17 17:29:00,984 DEBUG   SenderThread:80915 [sender.py:send_request():402] send_request: defer
+2023-05-17 17:29:00,984 INFO    SenderThread:80915 [sender.py:send_request_defer():622] handle sender defer: 14
+2023-05-17 17:29:00,984 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: poll_exit
+2023-05-17 17:29:00,985 DEBUG   SenderThread:80915 [sender.py:send_request():402] send_request: poll_exit
+2023-05-17 17:29:00,985 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: server_info
+2023-05-17 17:29:00,986 DEBUG   SenderThread:80915 [sender.py:send_request():402] send_request: server_info
+2023-05-17 17:29:00,987 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: get_summary
+2023-05-17 17:29:00,987 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: sampled_history
+2023-05-17 17:29:01,104 INFO    MainThread:80915 [wandb_run.py:_footer_history_summary_info():3469] rendering history
+2023-05-17 17:29:01,104 INFO    MainThread:80915 [wandb_run.py:_footer_history_summary_info():3501] rendering summary
+2023-05-17 17:29:01,105 INFO    MainThread:80915 [wandb_run.py:_footer_sync_info():3428] logging synced files
+2023-05-17 17:29:01,105 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: shutdown
+2023-05-17 17:29:01,105 INFO    HandlerThread:80915 [handler.py:finish():845] shutting down handler
+2023-05-17 17:29:01,989 INFO    WriterThread:80915 [datastore.py:close():298] close: /Users/jamesmarquardt/drachmai/epana/wandb/run-20230517_172758-didwmf5b/run-didwmf5b.wandb
+2023-05-17 17:29:02,108 INFO    SenderThread:80915 [sender.py:finish():1550] shutting down sender
+2023-05-17 17:29:02,108 INFO    SenderThread:80915 [file_pusher.py:finish():167] shutting down file pusher
+2023-05-17 17:29:02,108 INFO    SenderThread:80915 [file_pusher.py:join():172] waiting for file pusher
