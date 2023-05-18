@@ -2,6 +2,7 @@ include .env
 export $(shell sed 's/=.*//' .env)
 
 LABELED_DIRECTORIES = labeled_datasets/marketing labeled_datasets/medicine labeled_datasets/safety\ services
+DEFAULT_TRAINING_INSTANCE = ''
 
 setup:
 	pipenv install
