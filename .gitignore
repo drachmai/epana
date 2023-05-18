@@ -11,3 +11,5 @@ dist
 test_env
 *.pyc
 .DS_Store
+wandb
+wandb-debug.log
