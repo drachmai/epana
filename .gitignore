@@ -12,4 +12,4 @@ test_env
 *.pyc
 .DS_Store
 *.log
-wandb
+wandb/
