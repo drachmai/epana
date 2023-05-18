@@ -1,0 +1,46 @@
+2023-05-17 17:27:58,818 INFO    StreamThr :80915 [internal.py:wandb_internal():86] W&B internal server running at pid: 80915, started at: 2023-05-17 17:27:58.817677
+2023-05-17 17:27:58,818 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: status
+2023-05-17 17:27:58,819 INFO    WriterThread:80915 [datastore.py:open_for_write():85] open: /Users/jamesmarquardt/drachmai/epana/wandb/run-20230517_172758-didwmf5b/run-didwmf5b.wandb
+2023-05-17 17:27:58,822 DEBUG   SenderThread:80915 [sender.py:send():375] send: header
+2023-05-17 17:27:58,918 DEBUG   SenderThread:80915 [sender.py:send():375] send: run
+2023-05-17 17:27:59,514 INFO    SenderThread:80915 [dir_watcher.py:__init__():219] watching files in: /Users/jamesmarquardt/drachmai/epana/wandb/run-20230517_172758-didwmf5b/files
+2023-05-17 17:27:59,514 INFO    SenderThread:80915 [sender.py:_start_run_threads():1124] run started: didwmf5b with start time 1684369678.814486
+2023-05-17 17:27:59,514 DEBUG   SenderThread:80915 [sender.py:send_request():402] send_request: summary_record
+2023-05-17 17:27:59,515 INFO    SenderThread:80915 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-17 17:27:59,517 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: check_version
+2023-05-17 17:27:59,518 DEBUG   SenderThread:80915 [sender.py:send_request():402] send_request: check_version
+2023-05-17 17:28:00,113 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: run_start
+2023-05-17 17:28:00,123 DEBUG   HandlerThread:80915 [system_info.py:__init__():31] System info init
+2023-05-17 17:28:00,124 DEBUG   HandlerThread:80915 [system_info.py:__init__():46] System info init done
+2023-05-17 17:28:00,124 INFO    HandlerThread:80915 [system_monitor.py:start():181] Starting system monitor
+2023-05-17 17:28:00,124 INFO    SystemMonitor:80915 [system_monitor.py:_start():145] Starting system asset monitoring threads
+2023-05-17 17:28:00,125 INFO    HandlerThread:80915 [system_monitor.py:probe():201] Collecting system info
+2023-05-17 17:28:00,125 INFO    SystemMonitor:80915 [interfaces.py:start():190] Started cpu monitoring
+2023-05-17 17:28:00,126 DEBUG   HandlerThread:80915 [system_info.py:probe():195] Probing system
+2023-05-17 17:28:00,126 INFO    SystemMonitor:80915 [interfaces.py:start():190] Started disk monitoring
+2023-05-17 17:28:00,127 INFO    SystemMonitor:80915 [interfaces.py:start():190] Started memory monitoring
+2023-05-17 17:28:00,127 INFO    SystemMonitor:80915 [interfaces.py:start():190] Started network monitoring
+2023-05-17 17:28:00,136 DEBUG   HandlerThread:80915 [system_info.py:_probe_git():180] Probing git
+2023-05-17 17:28:00,183 DEBUG   HandlerThread:80915 [system_info.py:_probe_git():188] Probing git done
+2023-05-17 17:28:00,183 DEBUG   HandlerThread:80915 [system_info.py:probe():240] Probing system done
+2023-05-17 17:28:00,183 DEBUG   HandlerThread:80915 [system_monitor.py:probe():210] {'os': 'macOS-13.3.1-x86_64-i386-64bit', 'python': '3.11.2', 'heartbeatAt': '2023-05-18T00:28:00.126172', 'startedAt': '2023-05-18T00:27:58.765342', 'docker': None, 'cuda': None, 'args': ('--dataset_path', 'dataset_dicts/varied-task-concern', '--model_save_path', '.'), 'state': 'running', 'program': '/Users/jamesmarquardt/drachmai/epana/epana_modeling/trainers/local.py', 'codePath': 'epana_modeling/trainers/local.py', 'git': {'remote': 'https://github.com/drachmai/epana.git', 'commit': '7bbc7964efa70ad44f86906c697b4bd25c996285'}, 'email': 'jamarq@uw.edu', 'root': '/Users/jamesmarquardt/drachmai/epana', 'host': 'Jamess-MacBook-Pro-2.local', 'username': 'jamesmarquardt', 'executable': '/Users/jamesmarquardt/.local/share/virtualenvs/epana-5bA-42am-python/bin/python', 'cpu_count': 8, 'cpu_count_logical': 8, 'cpu_freq': {'current': 2400, 'min': 2400, 'max': 2400}, 'cpu_freq_per_core': [{'current': 2400, 'min': 2400, 'max': 2400}], 'disk': {'total': 733.8827896118164, 'used': 8.45159912109375}, 'memory': {'total': 64.0}}
+2023-05-17 17:28:00,183 INFO    HandlerThread:80915 [system_monitor.py:probe():211] Finished collecting system info
+2023-05-17 17:28:00,183 INFO    HandlerThread:80915 [system_monitor.py:probe():214] Publishing system info
+2023-05-17 17:28:00,183 DEBUG   HandlerThread:80915 [system_info.py:_save_pip():51] Saving list of pip packages installed into the current environment
+2023-05-17 17:28:00,184 DEBUG   HandlerThread:80915 [system_info.py:_save_pip():67] Saving pip packages done
+2023-05-17 17:28:00,185 INFO    HandlerThread:80915 [system_monitor.py:probe():216] Finished publishing system info
+2023-05-17 17:28:00,218 DEBUG   SenderThread:80915 [sender.py:send():375] send: files
+2023-05-17 17:28:00,218 INFO    SenderThread:80915 [sender.py:_save_file():1378] saving file wandb-metadata.json with policy now
+2023-05-17 17:28:00,222 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-17 17:28:00,223 DEBUG   SenderThread:80915 [sender.py:send_request():402] send_request: stop_status
+2023-05-17 17:28:00,477 DEBUG   SenderThread:80915 [sender.py:send():375] send: telemetry
+2023-05-17 17:28:00,519 INFO    Thread-12 :80915 [dir_watcher.py:_on_file_created():278] file/dir created: /Users/jamesmarquardt/drachmai/epana/wandb/run-20230517_172758-didwmf5b/files/requirements.txt
+2023-05-17 17:28:00,519 INFO    Thread-12 :80915 [dir_watcher.py:_on_file_created():278] file/dir created: /Users/jamesmarquardt/drachmai/epana/wandb/run-20230517_172758-didwmf5b/files/wandb-summary.json
+2023-05-17 17:28:00,520 INFO    Thread-12 :80915 [dir_watcher.py:_on_file_created():278] file/dir created: /Users/jamesmarquardt/drachmai/epana/wandb/run-20230517_172758-didwmf5b/files/wandb-metadata.json
+2023-05-17 17:28:01,221 INFO    wandb-upload_0:80915 [upload_job.py:push():137] Uploaded file /var/folders/bv/9h05by3n76d3fsrnnt4tkftc0000gn/T/tmpmzoglkxtwandb/57rjrkxr-wandb-metadata.json
+2023-05-17 17:28:04,489 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: status_report
+2023-05-17 17:28:09,510 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: status_report
+2023-05-17 17:28:14,521 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: status_report
+2023-05-17 17:28:15,227 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-17 17:28:15,227 DEBUG   SenderThread:80915 [sender.py:send_request():402] send_request: stop_status
+2023-05-17 17:28:20,367 DEBUG   HandlerThread:80915 [handler.py:handle_request():144] handle_request: status_report

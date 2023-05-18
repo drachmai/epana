@@ -147,7 +147,7 @@ def train(num_epochs, batch_size, learning_rate, step_size, gamma, embedder_name
     )
 
     # Run on gpu is available
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = accelerator.device
 
     # Place to save the checkpoints
     if not os.path.exists('checkpoints'):
@@ -216,23 +216,25 @@ def train(num_epochs, batch_size, learning_rate, step_size, gamma, embedder_name
             target = batch["target"].to(device)
 
             optimizer.zero_grad()
-            logits = concern_model(
-                previous_chat={
-                    'input_ids': previous_chat_input_ids, 
-                    'attention_mask': previous_chat_attention_mask
-                },
-                last_message={
-                    'input_ids': last_message_input_ids, 
-                    'attention_mask': last_message_attention_mask
-                },
-                concerning_definitions={
-                    'input_ids': concerning_definitions_input_ids, 
-                    'attention_mask': concerning_definitions_attention_mask
-                }
-            )
-            loss = criterion(logits, target)
-            loss.backward()
-            epoch_loss += loss.item()
+            with accelerator.autocast():
+                logits = concern_model(
+                    previous_chat={
+                        'input_ids': previous_chat_input_ids, 
+                        'attention_mask': previous_chat_attention_mask
+                    },
+                    last_message={
+                        'input_ids': last_message_input_ids, 
+                        'attention_mask': last_message_attention_mask
+                    },
+                    concerning_definitions={
+                        'input_ids': concerning_definitions_input_ids, 
+                        'attention_mask': concerning_definitions_attention_mask
+                    }
+                )
+                loss = criterion(logits, target)
+            accelerator.backward(loss)
+
+            epoch_loss += accelerator.gather(loss).item()
 
             # Gradient accumulation
             if (i + 1) % accumulation_steps == 0:
