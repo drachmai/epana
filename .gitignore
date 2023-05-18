@@ -1,0 +1,15 @@
+*.env
+Pipfile.lock
+**/.ipynb_checkpoints
+labeled_datasets/*
+epana_modeling/requirements.txt
+checkpoints
+trained_models
+build
+dist
+*.egg-info
+test_env
+*.pyc
+.DS_Store
+*.log
+wandb/

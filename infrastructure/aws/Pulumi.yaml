@@ -1,0 +1,6 @@
+name: epana
+runtime:
+  name: python
+  options:
+    virtualenv: venv
+description: Infra for training and hosting epana
