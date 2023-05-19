@@ -3,23 +3,21 @@ import torch.nn as nn
 from torch.utils.data import Dataset
 from transformers import AutoModel, PretrainedConfig, PreTrainedModel
 import numpy as np
+        
 
-
-class FocalLoss(nn.Module):
-    def __init__(self, alpha=[1, 1], gamma=2, reduction='mean'):
-        super(FocalLoss, self).__init__()
-        self.alpha = torch.tensor(alpha)
+class BinaryFocalLoss(nn.Module):
+    def __init__(self, alpha=0.5, gamma=2, reduction='mean'):
+        super(BinaryFocalLoss, self).__init__()
+        self.alpha = alpha
         self.gamma = gamma
         self.reduction = reduction
-        self.bce_loss = nn.CrossEntropyLoss(reduction='none')
-
-    def forward(self, inputs, targets):
-        # Move alpha to the correct device
-        alpha = self.alpha.to(inputs.device)
+        self.bce_loss = nn.BCEWithLogitsLoss(reduction='none')
         
+    def forward(self, inputs, targets):
+        inputs = inputs.squeeze(-1)
         BCE_loss = self.bce_loss(inputs, targets)
         pt = torch.exp(-BCE_loss)
-        F_loss = alpha[targets] * (1-pt)**self.gamma * BCE_loss
+        F_loss = self.alpha * (1-pt)**self.gamma * BCE_loss
 
         if self.reduction == 'mean':
             return torch.mean(F_loss)
@@ -30,13 +28,13 @@ class FocalLoss(nn.Module):
 
 
 class ConcernDataset(Dataset):
-    def __init__(self, dataset, tokenizer, mode="regression"):
+    def __init__(self, dataset, tokenizer, mode="classification"):
         previous_chats = dataset['previous_chat']
         last_messages = dataset['last_message']
         concerning_definitions = dataset['concerning_definitions']
 
         if mode == "classification":
-            target = torch.tensor((np.array(dataset['is_concerning_score']) >= 0).astype(int)).long()
+            target = torch.tensor((np.array(dataset['is_concerning_score']) >= 0).astype(int)).float()
         elif mode == "regression":
             target = torch.tensor(dataset['is_concerning_score']).float()
 
@@ -74,12 +72,9 @@ class ConcernDataset(Dataset):
 
 
 class ConcernModelConfig(PretrainedConfig):
-    def __init__(self, pretrained_model_name_or_path=None, strategy="concatenate", mode="classification", **kwargs):
+    def __init__(self, pretrained_model_name_or_path=None, **kwargs):
         super(ConcernModelConfig, self).__init__(**kwargs)
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
-        self.strategy = strategy
-        self.supported_strategies = ["concatenate", "average", "attention", "higher_level_activations"]
-        self.mode = mode
 
 
 class ConcernModel(PreTrainedModel):
@@ -87,78 +82,46 @@ class ConcernModel(PreTrainedModel):
 
     def __init__(self, config):
         super(ConcernModel, self).__init__(config)
+
         if config.pretrained_model_name_or_path:
-            self.embedding_model = AutoModel.from_pretrained(config.pretrained_model_name_or_path)
+            self.previous_chat_embedder = AutoModel.from_pretrained(config.pretrained_model_name_or_path)
+            self.last_message_embedder = AutoModel.from_pretrained(config.pretrained_model_name_or_path)
+            self.concerning_definition_embedder = AutoModel.from_pretrained(config.pretrained_model_name_or_path)
         else:
-            self.embedding_model = None
-            self.embedding_cache = {}
+            self.previous_chat_embedder = None
+            self.last_message_embedder = None
+            self.concerning_definition_embedder = None
 
-        self.mode = config.mode
+        self.projection = nn.Linear(self.previous_chat_embedder.config.hidden_size * 2, self.previous_chat_embedder.config.hidden_size)
+        self.classifier = nn.Linear(self.previous_chat_embedder.config.hidden_size * 2, 1)
 
-        if config.mode == "classification":
-            classifier_output_size = 2
-        elif config.mode == "regression":
-            classifier_output_size = 1
+    @staticmethod
+    def compute_co_attention(a, b):
+        similarity_matrix = torch.bmm(a, b.transpose(1, 2))
+        a_attention = torch.softmax(similarity_matrix, dim=1)
+        b_attention = torch.softmax(similarity_matrix.transpose(1, 2), dim=1)
+        a_attended = torch.bmm(a_attention, b)
+        b_attended = torch.bmm(b_attention, a)
 
-        if config.strategy == 'concatenate':
-            self.combine_embeddings = self.concatenate_embeddings
-            self.classifier = torch.nn.Linear(3 * 768, classifier_output_size)
-        elif config.strategy == 'average':
-            self.combine_embeddings = self.average_embeddings
-            self.classifier = torch.nn.Linear(768, classifier_output_size)
-        elif config.strategy == 'attention':
-            self.combine_embeddings = self.attention_embeddings
-            self.attention_layer = torch.nn.MultiheadAttention(embed_dim=768, num_heads=12)
-            self.classifier = torch.nn.Linear(768, classifier_output_size)
-        elif config.strategy == 'higher_level_activations':
-            self.combine_embeddings = self.higher_level_activations
-            self.classifier = nn.Linear(768, classifier_output_size)
-        else:
-            raise ValueError(f"Invalid strategy '{config.strategy}'. Supported strategies: {config.supported_strategies}")
+        # Apply mean pooling separately to a_attended and b_attended
+        a_attended_pooled = a_attended.mean(dim=1)
+        b_attended_pooled = b_attended.mean(dim=1)
+
+        return torch.cat((a_attended_pooled, b_attended_pooled), dim=-1)
 
     def forward(self, previous_chat, last_message, concerning_definitions):
-        previous_chat_outputs = self.embedding_model(**previous_chat)
-        last_message_outputs = self.embedding_model(**last_message)
-        concerning_definitions_outputs = self.embedding_model(**concerning_definitions)
+        previous_chat_outputs = self.previous_chat_embedder(**previous_chat).last_hidden_state
+        last_message_outputs = self.last_message_embedder(**last_message).last_hidden_state
+        concerning_definitions_outputs = self.concerning_definition_embedder(**concerning_definitions).last_hidden_state
 
-        combined_embeddings = self.combine_embeddings(previous_chat_outputs, last_message_outputs, concerning_definitions_outputs)
+        co_attention_chat_last_message = self.compute_co_attention(previous_chat_outputs, last_message_outputs)
 
-        logits = self.classifier(combined_embeddings)
-        
-        if self.mode == "regression":
-            logits = logits.squeeze()
+        # Projecting back to the original dimension
+        co_attention_chat_last_message_projected = self.projection(co_attention_chat_last_message)
+
+        co_attention = self.compute_co_attention(co_attention_chat_last_message_projected.unsqueeze(1), concerning_definitions_outputs)
+
+        logits = self.classifier(co_attention)
 
         return logits
-
-    def concatenate_embeddings(self, emb1, emb2, emb3):
-        emb1_cls = emb1.last_hidden_state[:, 0, :]
-        emb2_cls = emb2.last_hidden_state[:, 0, :]
-        emb3_cls = emb3.last_hidden_state[:, 0, :]
-        return torch.cat((emb1_cls, emb2_cls, emb3_cls), dim=1)
-
-    def average_embeddings(self, emb1, emb2, emb3):
-        emb1_cls = emb1.last_hidden_state[:, 0, :]
-        emb2_cls = emb2.last_hidden_state[:, 0, :]
-        emb3_cls = emb3.last_hidden_state[:, 0, :]
-        return (emb1_cls + emb2_cls + emb3_cls) / 3
-
-    def attention_embeddings(self, emb1, emb2, emb3):
-        emb1_cls = emb1.last_hidden_state[:, 0, :].unsqueeze(0)
-        emb2_cls = emb2.last_hidden_state[:, 0, :].unsqueeze(0)
-        emb3_cls = emb3.last_hidden_state[:, 0, :].unsqueeze(0)
-
-        query = emb1_cls.permute(1, 0, 2)
-        key = emb2_cls.permute(1, 0, 2)
-        value = emb3_cls.permute(1, 0, 2)
-
-        attention_output, _ = self.attention_layer(query=query, key=key, value=value)
-        return attention_output.squeeze(0)
-    
-    def higher_level_activations(self, emb1, emb2, emb3):
-        emb1_activations = emb1.last_hidden_state[:, -4:, :].mean(dim=1)
-        emb2_activations = emb2.last_hidden_state[:, -4:, :].mean(dim=1)
-        emb3_activations = emb3.last_hidden_state[:, -4:, :].mean(dim=1)
-
-        return (emb1_activations + emb2_activations + emb3_activations) / 3
-
 

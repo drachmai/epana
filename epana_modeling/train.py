@@ -14,7 +14,7 @@ import numpy as np
 from sklearn.metrics import accuracy_score, roc_auc_score, f1_score, precision_score, recall_score
 from accelerate import Accelerator
 
-from model import ConcernDataset, ConcernModel, ConcernModelConfig, FocalLoss
+from model import ConcernDataset, ConcernModel, ConcernModelConfig, BinaryFocalLoss
 
 
 def sample_dataset(data, sample_size):
@@ -91,10 +91,11 @@ def evaluate_model(model, data_loader, criterion, mode, device):
                 # Calculate mean absolute error (MAE)
                 mae_sum += torch.abs(logits - target).sum().item()
             elif mode == "classification":
-                probs = torch.nn.functional.softmax(logits, dim=1).cpu().detach().numpy()
                 local_targets = target.cpu().numpy()
-                preds = np.argmax(probs, axis=1)
-                probs = probs[:, 1]
+                
+                probs = torch.sigmoid(logits).cpu().detach().numpy().flatten()
+                preds = (probs > 0.5).astype(int)
+
 
                 all_preds.extend(preds)
                 all_targets.extend(local_targets)
@@ -123,7 +124,7 @@ def evaluate_model(model, data_loader, criterion, mode, device):
     return tracked_metric, metrics
 
 
-def train(num_epochs, batch_size, learning_rate, step_size, gamma, embedder_name, dataset, accumulation_steps, strategy, mode, focal_alpha_positive=None, focal_alpha_negative=None, focal_gamma=None, train_sample_size=None, val_sample_size=None, test_sample_size=None):
+def train(num_epochs, batch_size, learning_rate, step_size, gamma, embedder_name, dataset, accumulation_steps, strategy, mode, focal_alpha=None, focal_gamma=None, train_sample_size=None, val_sample_size=None, test_sample_size=None):
     # Start accelerator
     accelerator = Accelerator()
     
@@ -135,8 +136,7 @@ def train(num_epochs, batch_size, learning_rate, step_size, gamma, embedder_name
             "step_size": step_size,
             "gamma": gamma,
             "embedder_name": embedder_name,
-            "focal_alpha_positive": focal_alpha_positive,
-            "focal_alpha_negative": focal_alpha_negative,
+            "focal_alpha": focal_alpha,
             "focal_gamma": focal_gamma,
             "strategy": strategy,
             "mode": mode
@@ -181,7 +181,7 @@ def train(num_epochs, batch_size, learning_rate, step_size, gamma, embedder_name
     if mode == "regression":
         criterion = torch.nn.MSELoss()
     elif mode == "classification":
-        criterion = FocalLoss(alpha=[focal_alpha_positive, focal_alpha_negative], gamma=focal_gamma)
+        criterion = BinaryFocalLoss(alpha=focal_alpha, gamma=focal_gamma)
 
     criterion = criterion.to(device)  # Move the criterion to the device
 

@@ -42,3 +42,6 @@ endif
 upload-model-huggingface:
 	pipenv run huggingface-cli login --token $(HUGGINGFACE_WRITE_TOKEN)
 	pipenv run upload_model_huggingface --model_source_dir $(MODEL_SOURCE_DIR) --huggingface_org $(HUGGINGFACE_ORG) --repo_name $(REPO_NAME)
+
+run-tests:
+	pipenv run python -m unittest tests/test_model.py
