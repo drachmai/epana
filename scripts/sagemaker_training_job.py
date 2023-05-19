@@ -61,7 +61,7 @@ if __name__ == '__main__':
     parser.add_argument('--accumulation_steps', type=int)
     parser.add_argument('--strategy', type=str)
     parser.add_argument('--embedder_name', type=str)
-    parser.add_argument('--instance_type', type=str, defaul='ml.p3.2xlarge')
+    parser.add_argument('--instance_type', type=str)
     parser.add_argument('--download_model_path', type=str, default=None)
     args = parser.parse_args()
 

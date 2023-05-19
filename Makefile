@@ -1,8 +1,8 @@
 include .env
 export $(shell sed 's/=.*//' .env)
 
-LABELED_DIRECTORIES = labeled_datasets/marketing labeled_datasets/medicine labeled_datasets/safety\ services
-DEFAULT_TRAINING_INSTANCE = ''
+LABELED_DIRECTORIES=labeled_datasets/marketing labeled_datasets/medicine labeled_datasets/safety\ services
+SAGEMAKER_TRAINING_INSTANCE=ml.p3.2xlarge
 
 setup:
 	pipenv install
@@ -33,10 +33,10 @@ train-local:
 train-sagemaker:
 ifndef DOWNLOAD_MODEL_PATH
 	pipenv run pip freeze > epana_modeling/requirements.txt
-	AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) AWS_REGION=$(AWS_REGION) WANDB_API_KEY=$(WANDB_API_KEY) SAGEMAKER_EXECUTION_ROLE_ARN=$(SAGEMAKER_EXECUTION_ROLE_ARN) PYTHONPATH=scripts pipenv run train_sagemaker --s3_dataset_uri $(DATASET_S3_URI)
+	AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) AWS_REGION=$(AWS_REGION) WANDB_API_KEY=$(WANDB_API_KEY) SAGEMAKER_EXECUTION_ROLE_ARN=$(SAGEMAKER_EXECUTION_ROLE_ARN) PYTHONPATH=scripts pipenv run train_sagemaker --s3_dataset_uri $(DATASET_S3_URI) --instance_type $(SAGEMAKER_TRAINING_INSTANCE)
 else
 	pipenv run pip freeze > epana_modeling/requirements.txt
-	AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) AWS_REGION=$(AWS_REGION) WANDB_API_KEY=$(WANDB_API_KEY) SAGEMAKER_EXECUTION_ROLE_ARN=$(SAGEMAKER_EXECUTION_ROLE_ARN) PYTHONPATH=scripts pipenv run train_sagemaker --s3_dataset_uri $(DATASET_S3_URI) --download_model_path $(DOWNLOAD_MODEL_PATH)
+	AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID) AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY) AWS_REGION=$(AWS_REGION) WANDB_API_KEY=$(WANDB_API_KEY) SAGEMAKER_EXECUTION_ROLE_ARN=$(SAGEMAKER_EXECUTION_ROLE_ARN) PYTHONPATH=scripts pipenv run train_sagemaker --s3_dataset_uri $(DATASET_S3_URI) --download_model_path $(DOWNLOAD_MODEL_PATH) --instance_type $(SAGEMAKER_TRAINING_INSTANCE)
 endif
 
 upload-model-huggingface:
