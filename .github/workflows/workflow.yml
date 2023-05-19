@@ -1,5 +1,3 @@
-# .github/workflows/python-app.yml
-
 name: Python application test
 
 on: [push, pull_request]
@@ -8,7 +6,7 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-
+git b
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python 3.10
